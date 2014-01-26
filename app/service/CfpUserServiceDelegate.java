@@ -4,9 +4,7 @@ import models.Credentials;
 import models.User;
 import play.Application;
 import play.Logger;
-import scala.None;
 import scala.Option;
-import scala.Some;
 import securesocial.core.*;
 import securesocial.core.java.BaseUserService;
 import securesocial.core.java.Token;
@@ -18,73 +16,27 @@ import java.util.HashMap;
  * Classe utilisée par SecureSocial pour la gestion des Identity
  *
  */
-public class CfpUserServiceMock extends BaseUserService {
+public class CfpUserServiceDelegate extends BaseUserService {
 
     // TODO Eventuellement mettre les données Token en base (contient les hash pour créer les comptes locaux)
     // Pour le CFP, le nombre de User ne devrait pas être très important => laisser en HashMap pour le moment
 //    private HashMap<String, Identity> users = new HashMap<String, Identity>();
     private HashMap<String, Token> tokens = new HashMap<String, Token>();
 
-    public CfpUserServiceMock(Application application) {
+    public CfpUserServiceDelegate(Application application) {
         super(application);
     }
 
     @Override
     public Identity doFind(IdentityId identityId) {
-        Logger.debug("yes2 ! doFind SecureSocial Find User by Id : " + identityId.userId() + " / " + identityId.providerId());
-
-        return new Identity(){
-
-            @Override
-            public IdentityId identityId() {
-                return null;
-            }
-
-            @Override
-            public String firstName() {
-                return "Saul";
-            }
-
-            @Override
-            public String lastName() {
-                return "Hudson";
-            }
-
-            @Override
-            public String fullName() {
-                return "Saul 'Slash' Hudson";
-            }
-
-            @Override
-            public Option<String> email() {
-                return Some.apply("slash@gnr.fr");
-            }
-
-            @Override
-            public Option<String> avatarUrl() {
-                return Option.apply(null);
-            }
-
-            @Override
-            public AuthenticationMethod authMethod() {
-                return AuthenticationMethod.UserPassword();
-            }
-
-            @Override
-            public Option<OAuth1Info> oAuth1Info() {
-                return Option.apply(null);
-            }
-
-            @Override
-            public Option<OAuth2Info> oAuth2Info() {
-                return Option.apply(null);
-            }
-
-            @Override
-            public Option<PasswordInfo> passwordInfo() {
-                return Option.apply(new PasswordInfo("nocheck", "no pass", Option.apply("")));
-            }
-        };
+        Logger.debug("doFind SecureSocial Find User by Id : " + identityId.userId() + " / " + identityId.providerId());
+        // Recherche d'un user existant et création ou mise à jour des données en SGBD
+        User userCfp = User.findByExternalId(identityId.userId(), identityId.providerId());
+        Identity identity = null;
+        if (userCfp!=null) {
+            identity = userToIdentity(userCfp);
+        }
+        return identity;
     }
 
     @Override

@@ -1,6 +1,6 @@
 package service
 
-import securesocial.core.PasswordInfo
+import securesocial.core.{Registry, PasswordInfo}
 import securesocial.core.providers.utils.PasswordHasher
 
 /**
@@ -14,4 +14,9 @@ class MockPasswordHasher(application: play.api.Application) extends PasswordHash
   def hash(plainPassword: String) = PasswordInfo(id,plainPassword)
 
   def matches(passwordInfo: PasswordInfo, suppliedPassword: String) = true
+
+  override def onStart() = Registry.hashers.get(id).orElse {
+      super.onStart()
+      None
+    }
 }
