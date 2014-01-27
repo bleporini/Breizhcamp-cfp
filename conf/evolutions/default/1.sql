@@ -4,27 +4,27 @@
 # --- !Ups
 
 create table agenda (
-  id                        bigint auto_increment not null,
-  debut_cfp                 datetime,
-  fin_cfp                   datetime,
-  fin_vote                  datetime,
+  id                        bigint not null,
+  debut_cfp                 timestamp,
+  fin_cfp                   timestamp,
+  fin_vote                  timestamp,
   constraint pk_agenda primary key (id))
 ;
 
 create table comment (
-  id                        bigint auto_increment not null,
+  id                        bigint not null,
   author_id                 bigint,
-  date_creation             datetime,
+  date_creation             timestamp,
   proposal_id               bigint,
   comment                   varchar(140),
-  clos                      tinyint(1) default 0,
-  private_comment           tinyint(1) default 0,
+  clos                      boolean,
+  private_comment           boolean,
   question_id               bigint,
   constraint pk_comment primary key (id))
 ;
 
 create table credentials (
-  id                        bigint auto_increment not null,
+  id                        bigint not null,
   user_id                   bigint,
   ext_user_id               varchar(255),
   provider_id               varchar(255),
@@ -41,14 +41,14 @@ create table credentials (
 ;
 
 create table dynamic_field (
-  id                        bigint auto_increment not null,
+  id                        bigint not null,
   name                      varchar(50),
   constraint uq_dynamic_field_name unique (name),
   constraint pk_dynamic_field primary key (id))
 ;
 
 create table dynamic_field_value (
-  id                        bigint auto_increment not null,
+  id                        bigint not null,
   value                     varchar(255),
   dynamic_field_id          bigint,
   user_id                   bigint,
@@ -56,7 +56,7 @@ create table dynamic_field_value (
 ;
 
 create table event (
-  id                        bigint auto_increment not null,
+  id                        bigint not null,
   name                      varchar(50),
   short_name                varchar(5),
   url                       varchar(200),
@@ -69,7 +69,7 @@ create table event (
 ;
 
 create table link (
-  id                        bigint auto_increment not null,
+  id                        bigint not null,
   user_id                   bigint not null,
   label                     varchar(50),
   url                       varchar(200),
@@ -79,7 +79,7 @@ create table link (
 ;
 
 create table proposal (
-  id                        bigint auto_increment not null,
+  id                        bigint not null,
   title                     varchar(50),
   description               varchar(2000),
   indications_organisateurs varchar(1000),
@@ -96,14 +96,14 @@ create table proposal (
 ;
 
 create table tag (
-  id                        bigint auto_increment not null,
+  id                        bigint not null,
   nom                       varchar(255),
   constraint uq_tag_nom unique (nom),
   constraint pk_tag primary key (id))
 ;
 
 create table talk_format (
-  id                        bigint auto_increment not null,
+  id                        bigint not null,
   libelle                   varchar(50),
   duree_minutes             integer,
   description               varchar(255),
@@ -113,7 +113,7 @@ create table talk_format (
 ;
 
 create table track (
-  id                        bigint auto_increment not null,
+  id                        bigint not null,
   title                     varchar(50),
   short_title               varchar(5),
   description               varchar(1000),
@@ -122,14 +122,14 @@ create table track (
 ;
 
 create table user (
-  id                        bigint auto_increment not null,
+  id                        bigint not null,
   email                     varchar(255),
   full_name                 varchar(255),
-  date_creation             datetime,
-  admin                     tinyint(1) default 0,
-  notif_on_my_proposal      tinyint(1) default 0,
-  notif_admin_on_all_proposal tinyint(1) default 0,
-  notif_admin_on_proposal_with_comment tinyint(1) default 0,
+  date_creation             timestamp,
+  admin                     boolean,
+  notif_on_my_proposal      boolean,
+  notif_admin_on_all_proposal boolean,
+  notif_admin_on_proposal_with_comment boolean,
   adresse_mac               varchar(255),
   description               varchar(2000),
   avatar                    varchar(255),
@@ -138,7 +138,7 @@ create table user (
 ;
 
 create table vote (
-  id                        bigint auto_increment not null,
+  id                        bigint not null,
   user_id                   bigint,
   proposal_id               bigint,
   note                      integer,
@@ -146,7 +146,7 @@ create table vote (
 ;
 
 create table vote_status (
-  id                        bigint auto_increment not null,
+  id                        bigint not null,
   status                    integer,
   constraint ck_vote_status_status check (status in (0,1,2)),
   constraint pk_vote_status primary key (id))
@@ -176,6 +176,34 @@ create table user_event (
   event_id                       bigint not null,
   constraint pk_user_event primary key (user_id, event_id))
 ;
+create sequence agenda_seq;
+
+create sequence comment_seq;
+
+create sequence credentials_seq;
+
+create sequence dynamic_field_seq;
+
+create sequence dynamic_field_value_seq;
+
+create sequence event_seq;
+
+create sequence link_seq;
+
+create sequence proposal_seq;
+
+create sequence tag_seq;
+
+create sequence talk_format_seq;
+
+create sequence track_seq;
+
+create sequence user_seq;
+
+create sequence vote_seq;
+
+create sequence vote_status_seq;
+
 alter table comment add constraint fk_comment_author_1 foreign key (author_id) references user (id) on delete restrict on update restrict;
 create index ix_comment_author_1 on comment (author_id);
 alter table comment add constraint fk_comment_proposal_2 foreign key (proposal_id) references proposal (id) on delete restrict on update restrict;
@@ -184,8 +212,8 @@ alter table comment add constraint fk_comment_question_3 foreign key (question_i
 create index ix_comment_question_3 on comment (question_id);
 alter table credentials add constraint fk_credentials_user_4 foreign key (user_id) references user (id) on delete restrict on update restrict;
 create index ix_credentials_user_4 on credentials (user_id);
-alter table dynamic_field_value add constraint fk_dynamic_field_value_dynamicField_5 foreign key (dynamic_field_id) references dynamic_field (id) on delete restrict on update restrict;
-create index ix_dynamic_field_value_dynamicField_5 on dynamic_field_value (dynamic_field_id);
+alter table dynamic_field_value add constraint fk_dynamic_field_value_dynamic_5 foreign key (dynamic_field_id) references dynamic_field (id) on delete restrict on update restrict;
+create index ix_dynamic_field_value_dynamic_5 on dynamic_field_value (dynamic_field_id);
 alter table dynamic_field_value add constraint fk_dynamic_field_value_user_6 foreign key (user_id) references user (id) on delete restrict on update restrict;
 create index ix_dynamic_field_value_user_6 on dynamic_field_value (user_id);
 alter table event add constraint fk_event_agenda_7 foreign key (agenda_id) references agenda (id) on delete restrict on update restrict;
@@ -229,43 +257,71 @@ alter table user_event add constraint fk_user_event_event_02 foreign key (event_
 
 # --- !Downs
 
-SET FOREIGN_KEY_CHECKS=0;
+SET REFERENTIAL_INTEGRITY FALSE;
 
-drop table agenda;
+drop table if exists agenda;
 
-drop table comment;
+drop table if exists comment;
 
-drop table credentials;
+drop table if exists credentials;
 
-drop table dynamic_field;
+drop table if exists dynamic_field;
 
-drop table dynamic_field_value;
+drop table if exists dynamic_field_value;
 
-drop table event;
+drop table if exists event;
 
-drop table user_event;
+drop table if exists user_event;
 
-drop table link;
+drop table if exists link;
 
-drop table proposal;
+drop table if exists proposal;
 
-drop table user_proposal;
+drop table if exists user_proposal;
 
-drop table tag_proposal;
+drop table if exists tag_proposal;
 
-drop table tag;
+drop table if exists tag;
 
-drop table talk_format;
+drop table if exists talk_format;
 
-drop table track;
+drop table if exists track;
 
-drop table user_track;
+drop table if exists user_track;
 
-drop table user;
+drop table if exists user;
 
-drop table vote;
+drop table if exists vote;
 
-drop table vote_status;
+drop table if exists vote_status;
 
-SET FOREIGN_KEY_CHECKS=1;
+SET REFERENTIAL_INTEGRITY TRUE;
+
+drop sequence if exists agenda_seq;
+
+drop sequence if exists comment_seq;
+
+drop sequence if exists credentials_seq;
+
+drop sequence if exists dynamic_field_seq;
+
+drop sequence if exists dynamic_field_value_seq;
+
+drop sequence if exists event_seq;
+
+drop sequence if exists link_seq;
+
+drop sequence if exists proposal_seq;
+
+drop sequence if exists tag_seq;
+
+drop sequence if exists talk_format_seq;
+
+drop sequence if exists track_seq;
+
+drop sequence if exists user_seq;
+
+drop sequence if exists vote_seq;
+
+drop sequence if exists vote_status_seq;
 
