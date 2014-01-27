@@ -1,13 +1,17 @@
-<!doctype html>
+@(user: User)
+
+<!DOCTYPE html>
 <html ng-app="breizhCampCFP" ng-controller="RootController" sessionhandler>
     <head>
         <meta charset="utf-8">
-        <title>BreizhCamp CFP</title>
+        <title>Call for Papers</title>
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <link rel="icon" type="image/png" href="/assets/img/favicon.png" />
         <link rel="stylesheet" media="screen" href="/assets/stylesheets/bootstrap.min.css">
+        <link rel="stylesheet" media="screen" href="/assets/stylesheets/bootstrap-social.css">
         <link rel="stylesheet" media="screen" href="/assets/stylesheets/app.css" />
-        <link href="//netdna.bootstrapcdn.com/font-awesome/3.2.1/css/font-awesome.css" rel="stylesheet">
+        <link rel="stylesheet" media="screen" href="/assets/stylesheets/angular-table.css" />
+        <link rel="stylesheet" href="//netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.min.css" />
     </head>
     <body>
         <div class="navbar navbar-inverse" role="navigation">
@@ -26,10 +30,10 @@
                         <li class="active"><a href="/#/dashboard">Home</a></li>
                         
                         <li class="dropdown" ng-show="userService.isAuthenticated()" ng-cloak>
-                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">Proposals <b class="caret"></b></a>
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">Propositions <b class="caret"></b></a>
                             <ul class="dropdown-menu">
-                                <li><a href="/#/submitproposal/new">Soumettre un proposal</a></li>
-                                <li><a href="/#/manageproposal">Gérer vos proposals</a></li>
+                                <li><a href="/#/submitproposal/new">Soumettre un sujet</a></li>
+                                <li><a href="/#/manageproposal">Gérer vos propositions</a></li>
                             </ul>
                         </li>
                     </ul>
@@ -38,20 +42,24 @@
                     <ul class="nav navbar-nav navbar-right" ng-show="userService.isAuthenticated()" ng-cloak>
 
                         <!-- Admin dropdown -->
-                        <li class="dropdown" ng-show="userService.isAdmin()">
+                        <li class="dropdown" ng-show="userService.isAdmin() || userService.isSuperAdmin()">
                             <a href="#" class="dropdown-toggle" data-toggle="dropdown">
                                 <span class="glyphicon glyphicon-wrench"></span> Admin <b class="caret"></b>
                             </a>
 
                             <ul class="dropdown-menu" >
-                                <li><a href="/#/admin/users"><span class="glyphicon glyphicon-user"></span> Utilisateurs</a></li>
-                                <li class="divider"></li>
-                                <li><a href="/#/admin/proposals/list"><span class="glyphicon glyphicon-list"></span> Liste des proposals</a>
-                                <li><a href="/#/admin/mailing"><span class="glyphicon glyphicon-envelope"></span> Mailing</a>
-                                <li><a href="/#/admin/vote"><span class="glyphicon glyphicon-ok"></span> Gestion des votes</a>
-                                <li><a href="/#/admin/creneaux"><span class="glyphicon glyphicon-th-list"></span> Gestion des créneaux</a>
-                                <li><a href="/#/admin/events"><span class="glyphicon glyphicon-th-list"></span> Gestion des événements</a>
-                                <li><a href="/#/admin/dynamicfields"><span class="glyphicon glyphicon-edit"></span> Gestion des champs dynamiques</a>
+                                <li><a href="/#/admin/users"  ng-show="userService.isSuperAdmin()"><span class="fa fa-users"></span> Utilisateurs</a></li>
+                                <li><a href="/#/admin/dynamicfields" ng-show="userService.isSuperAdmin()"><span class="fa fa-magic"></span> Champs dynamiques</a> </li>
+                                <li><a href="/#/admin/events" ng-show="userService.isSuperAdmin()"><span class="fa fa-folder-o"></span> Evénements</a></li>
+                                <li ng-show="userService.isSuperAdmin()" class="divider"></li>
+                                <li><a href="/#/admin/proposals/list" ng-show="userService.isAdmin()"><span class="fa fa-list"></span> Propositions</a></li>
+                                <li><a href="/#/admin/mailing" ng-show="userService.isAdmin()"><span class="fa fa-envelope-o"></span> Mailing</a></li>
+                                <li><a href="/#/admin/vote" ng-show="userService.isAdmin()"><span class="fa fa-check-square-o"></span> Votes</a></li>
+                                <li><a href="/#/admin/formats" ng-show="userService.isAdmin()"><span class="fa fa-clock-o"></span> Formats</a></li>
+                                <li><a href="/#/admin/tracks" ng-show="userService.isAdmin()"><span class="fa fa-folder-o"></span> Tracks</a></li>
+                                <li><a href="/#/admin/agenda" ng-show="userService.isAdmin()"><span class="fa fa-calendar"></span> Agenda</a> </li>
+
+
                             </ul>
                         </li>
                         <!-- End Admin dropdown -->
@@ -64,9 +72,9 @@
                             </a>
                             
                             <ul class="dropdown-menu">
-                                <li><a href="/#/settings/account"><span class="glyphicon glyphicon-wrench"></span> Paramètres</a></li>
+                                <li><a href="/#/settings/account"><span class="fa fa-user"></span> Profil</a></li>
                                 <li class="divider"></li>
-                                <li><a href="#" ng-click="logout()"><span class="glyphicon glyphicon-off"></span> D&eacute;connexion</a></li>
+                                <li><a href="#" ng-click="logout()"><span class="fa fa-power-off"></span> D&eacute;connexion</a></li>
                             </ul>
                         </li>
                         <!-- End User dropdown -->
@@ -76,6 +84,10 @@
         </div>
     
         <div class="container" ng-view></div>
+
+        <script>
+            window.userData = @Html(play.libs.Json.toJson(user).toString())
+        </script>
 
         <script src="/assets/javascripts/lib/jquery-1.9.0.min.js"></script>
         <script src="/assets/javascripts/lib/jquery.raty.min.js"></script>
@@ -87,6 +99,9 @@
         <script src="/assets/javascripts/lib/angular/angular-resource.min.js"></script>
         <script src="/assets/javascripts/lib/angular/angular-cookies.min.js"></script>
         <script src="/assets/javascripts/lib/angular/ui-bootstrap-tpls-0.2.0.min.js"></script>
+
+        <script src="/assets/javascripts/lib/angular-table.js"></script>
+
         <script src="/assets/javascripts/angular/app.js"></script>
         <script src="/assets/javascripts/angular/services.js"></script>
         <script src="/assets/javascripts/angular/controllers.js"></script>
@@ -113,5 +128,10 @@
                 s.parentNode.insertBefore(ga, s);
             })();
         </script>
+
+    <footer>
+        Call-for-Papers is a free non-profit service, developed <a href="https://github.com/BreizhJUG/Breizhcamp-cfp/">by community members</a> as <a href="http://www.gnu.org/licenses/agpl-3.0.html">AGPL</a> open-source software-as-a-service.
+        <a href="http://www.cloudbees.com"><img src="http://www.cloudbees.com/sites/default/files/Button-Powered-by-CB.png" title="Powered by CloudBees"/></a>
+    </footer>
     </body>
 </html>

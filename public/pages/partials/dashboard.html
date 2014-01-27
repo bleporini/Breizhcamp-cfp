@@ -1,87 +1,112 @@
 <div class="row">
     <div class="container-fluid">
         <div class="row-fluid">
-            <div ng-show="user" class="col-md-2 breadcrumb">
-                <p><h4>{{user.fullname}}</h4></p>
-                <p>{{user.email}}</p>
-                <hr/>
-                <img ng-src="{{user.avatar}}?s=100">
-                <hr/>
-                <p>
-                    <a href="#/settings/account" class="btn btn-primary">Editer votre profil</a>
-                </p>
-            </div>
+            <profil ng-model="user" />
+            <div ng-include src="views/header.html"></div>
             <div class="col-md-10">
-                <div class="well">
-                    <h2>DASHBOARD</h2><br>
-
-                    <div class="alert alert-error" ng-show="user && !user.email" ng-cloak class="ng-cloak">
-                        Merci de renseigner votre email sur votre <a href="/#/settings/email">profil</a> pour qu'on
-                        puisse vous contacter.
-                    </div>
-                </div>
-                <br/>
+                <h2><li class="fa fa-dashboard"></li> Dashboard</h2><br>
 
                 <div class="well">
                     <div ng-show="userService.isAdmin()">
-                        <h2>Status</h2>
+                        <legend>Synthèse du Call for Papers</legend>
 
-                        <table class="table table-bordered table-striped">
-                            <tbody>
+
+                        <table class="table table-bordered table-striped" style="text-align: center">
+                          <thead>
                             <tr>
-                                <th class="col-md-2">Propositions (Draft)</th>
-                                <th class="col-md-2">Proposals soumis</th>
-                                <th class="col-md-2">Proposals rejetés</th>
-                                <th class="col-md-2">Proposals acceptés</th>
-                                <th class="col-md-2">Proposals en attente</th>
-                                <th class="col-md-2">Vos Votes</th>
+                                <th style="text-align: center" class="col-md-2">Draft</th>
+                                <th style="text-align: center" class="col-md-2">soumis</th>
+                                <th style="text-align: center" class="col-md-2">rejetés</th>
+                                <th style="text-align: center" class="col-md-2">acceptés</th>
+                                <th style="text-align: center" class="col-md-2">en attente</th>
+                                <th style="text-align: center" class="col-md-2">Vos Votes</th>
                             </tr>
+                          </thead>
+                          <tbody>
                             <tr>
                                 <td>{{proposalstats.nbProposalDraft}}</td>
                                 <td>{{proposalstats.nbProposals}}</td>
-                                <td>{{proposalstats.nbRejetes}} / {{proposalstats.nbProposals}}</td>
-                                <td>{{proposalstats.nbAcceptes}} / {{proposalstats.nbProposals}}</td>
-                                <td>{{proposalstats.nbProposals - proposalstats.nbRejetes -
-                                    proposalstats.nbAcceptes}} / {{proposalstats.nbProposals}}
+                                <td>{{proposalstats.nbRejetes}}</td>
+                                <td>{{proposalstats.nbAcceptes}}</td>
+                                <td>{{proposalstats.nbProposals - proposalstats.nbRejetes - proposalstats.nbAcceptes}}
                                 </td>
-                                <td>{{proposalstats.nbVotesUser}} / {{proposalstats.nbProposals}}</td>
+                                <td>{{proposalstats.nbVotesUser}}</td>
                             </tr>
-                            </tbody>
+                          </tbody>
                         </table>
                     </div>
                     <br/>
 
-                    <h2><a ng-href="/#/manageproposal">Proposals</a></h2>
-                    <h4 ng-show="!proposals.length">
-                        - Aucun proposal proposé
-                    </h4>
-                    <h4 ng-show="proposalsDraft.length == 1">
-                        - 1 proposal en édition
-                    </h4>
-                    <h4 ng-show="proposalsDraft.length > 1">
-                        - {{proposals.length}} proposals en édition
-                    </h4>
-                    <h4 ng-show="proposals.length == 1">
-                        - 1 proposal proposé
-                    </h4>
-                    <h4 ng-show="proposals.length > 1">
-                        - {{proposals.length}} proposals proposés
-                    </h4>
-                    <br/>
-                    <h4 ng-show="proposalsok.length > 0"> - Proposals acceptés</h4>
+                    <div ng-show="user.isInfoValid">
+                        <legend>Vos propositions</legend>
+                        <p>
+                            <span class="badge badge-important" ng-repeat="error in errors['']">{{error}}</span>
+                        </p>
+                        <table class="table table-bordered table-striped" ng-show="proposals.length >0">
+                            <tbody>
 
-                    <p ng-repeat="proposal in proposalsok">- <a ng-href="/#/proposals/see/{{proposal.id}}" title="{{proposal.title}}">{{proposal.title}}</a>
-                    </p>
-                    <br/>
-                    <h4 ng-show="proposals_w.length > 0"> - Proposals en attente</h4>
+                            <tr>
+                                <th class="col-md-5"><a ng-click="predicate = 'title'; reverse=!reverse">Titre</a></th>
+                                <th class="col-md-5">Présentateurs</th>
+                                <th class="col-md-2">Soumettre</th>
+                                <th class="col-md-1">Audience</th>
+                                <th class="col-md-2"><a ng-click="predicate = 'status'; reverse=!reverse">Status</a></th>
+                                <th class="col-md-2"><li class="fa fa-comments-o"></li></th>
+                                <th class="col-md-2">Actions</th>
+                            </tr>
+                            <tr ng-repeat="proposal in proposals | orderBy:predicate:reverse ">
+                                <td>
+                                    <a href="/#/proposals/see/{{proposal.id}}">{{proposal.title}}</a>
+                                </td>
+                                <td>
+                                    <a href="/#/profil/{{user.id}}"> <img src="{{user.avatar}}" width="20px" height="20px"> {{user.fullname}}</a>
 
-                    <p ng-repeat="proposal in proposals_w">- <a ng-href="/#/proposals/see/{{proposal.id}}" title="{{proposal.title}}">{{proposal.title}}</a>
-                    </p>
-                    <br/>
-                    <h4 ng-show="proposalsko.length > 0"> - Proposals refusés</h4>
-
-                    <p ng-repeat="proposal in proposalsko">- <a ng-href="/#/proposals/see/{{proposal.id}}" title="{{proposal.title}}">{{proposal.title}}</a>
-                    </p>
+                                    <p ng-repeat="coSpeaker in proposal.coSpeakers">
+                                        <a href="/#/profil/{{coSpeaker.id}}"> <img src="{{user.avatar}}" width="20px" height="20px"></span> {{coSpeaker.fullname}}</a>
+                                    </p>
+                                </td>
+                                <td>
+                                    <p ng-show="proposal.status=='DRAFT'">
+                                        <a ng-click="submitProposal(proposal)">Soumettre</a>
+                                    </p>
+                                    <p ng-show="proposal.status!='DRAFT'">
+                                        <i class="fa fa-check"></i> Soumis
+                                    </p>
+                                </td>
+                                <td>
+                                    <p ng-switch on="proposal.audience">
+                                        <span  ng-switch-when="BEGINNER">Débutant</span>
+                                        <span  ng-switch-when="INTERMEDIATE">Intermédiaire</span>
+                                        <span  ng-switch-when="ADVANCED">Avancé</span>
+                                    </p>
+                                </td>
+                                <td>
+                                    <p ng-switch on="proposal.status">
+                                        <span class="label label-warning" ng-switch-when="DRAFT"> <i class="fa fa-warning"></i> Draft</span>
+                                        <span class="label label-default" ng-switch-when="SUBMITTED"> Soumis</span>
+                                        <span class="label label-danger" ng-switch-when="REJECTED"> Rejeté</span>
+                                        <span class="label label-success" ng-switch-when="ACCEPTED"> Acceptée</span>
+                                        <span class="label label-info"    ng-switch-when="WAITING"> En attente</span>
+                                    </p>
+                                </td>
+                                <td>
+                                    <p>
+                                        <!-- TODO get unread comment counter then set label-warning -->
+                                        <a href="/#/proposals/see/{{proposal.id}}">
+                                            <span class="label label-warning" style="float:right">2</span>
+                                        </a>
+                                    </p>
+                                </td>
+                                <td style="text-align: center">
+                                    <a href="#/editproposal/{{proposal.id}}"><i class="fa fa-pencil"></i></a>
+                                    &nbsp;
+                                    <a ng-click="deleteProposal(proposal)"><i class="fa fa-trash-o"></i></a>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                        <p ng-show="proposals != undefined && proposals.length == 0">Aucun Proposal</p>
+                    </div>
                 </div>
             </div>
         </div>

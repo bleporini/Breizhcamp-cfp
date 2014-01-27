@@ -9,7 +9,7 @@ directives.directive('sessionhandler', function($location, $log) {
     // Evenement envoyé par un intercepteur HTTP
     return function(scope, element, attrs) {
         scope.$on('event:unauthorized', function() {
-            $location.path('/login');
+            location.reload(true);
         });
     };
 });
@@ -53,6 +53,52 @@ directives.directive('star', function factory() {
     };
     return directiveDefinitionObject;
 });
+
+directives.directive('profil', function factory() {
+    var directiveDefinitionObject = {
+        templateUrl: 'assets/pages/templates/profil.html',
+        restrict: 'E',
+        replace: true,
+        require: 'ngModel',
+        transclude: true,
+        link: function (scope, element, attrs) {
+            scope.settings= attrs.settings;
+            scope.publicView = attrs.publicView;
+        }
+    };
+    return directiveDefinitionObject;
+});
+
+
+directives.directive('reponse', function factory() {
+    var directiveDefinitionObject = {
+        templateUrl: 'assets/pages/templates/commentaireReponse.html',
+        restrict: 'E',
+        replace: true,
+        require: 'ngModel',
+        transclude: true,
+        link: function (scope, element, attrs) {
+
+        }
+    };
+    return directiveDefinitionObject;
+});
+
+
+directives.directive('comment', function ($compile) {
+    var directiveDefinitionObject = {
+        templateUrl: 'assets/pages/templates/comment.html',
+        restrict: 'E',
+        replace: true,
+        require: 'ngModel',
+        transclude: true,
+        link: function (scope, element, attrs,controller) {
+
+        }
+    };
+    return directiveDefinitionObject;
+});
+
 
 //directives.directive('stars', function factory() {
 //    var directiveDefinitionObject = {

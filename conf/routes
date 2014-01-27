@@ -3,7 +3,7 @@
 # ~~~~
 
 # Home page
-GET     /                           controllers.Assets.at(path="/public", file="index.html")
+GET     /                           controllers.Application.index
 
 # SecureSocial Login page
 GET     /login                      securesocial.controllers.LoginPage.login
@@ -30,7 +30,9 @@ GET     /settings/user/:id          controllers.account.settings.Account.getUser
 POST    /settings/account           controllers.account.settings.Account.save()
 POST    /settings/mac               controllers.account.settings.Account.changeMac()
 POST    /settings/notifs            controllers.account.settings.Notifs.save()
-GET     /settings/lien/remove/:id   controllers.account.settings.Account.deleteLink(id:Long)
+GET     /settings/link/remove/:id   controllers.account.settings.LinkController.deleteLink(id:Long)
+POST    /settings/links             controllers.account.settings.LinkController.save()
+GET     /settings/link/types        controllers.account.settings.LinkController.getTypes()
 POST    /settings/email             controllers.account.settings.Account.saveEmail()
 
 POST    /admin/submitusers          controllers.Admin.submitUsers()
@@ -47,33 +49,39 @@ POST    /proposals/:idProposal/comment/:idComment/delete    controllers.proposal
 POST    /proposals/:idProposal/comment/:idComment/edit      controllers.proposals.ProposalRestController.editComment(idProposal:Long,idComment:Long)
 POST    /proposals/:idProposal/status       controllers.proposals.ProposalRestController.saveStatus(idProposal:Long)
 POST    /proposals/:idProposal/vote/:note   controllers.proposals.ProposalRestController.saveVote(idProposal:Long,note:java.lang.Integer)
-POST    /proposals/rejectall            controllers.proposals.ProposalRestController.rejectAllProposalWithoutStatus()
+POST    /proposals/rejectall            controllers.proposals.ProposalRestController.rejectAllRemainingProposals()
 GET     /proposal/all/csv               controllers.proposals.ProposalRestController.getAllProposalsInCsv()
 GET     /proposal/all                   controllers.proposals.ProposalRestController.all()
 GET     /proposal/:idProposal               controllers.proposals.ProposalRestController.getById(idProposal:Long)
-POST     /proposal/submit/:idProposal               controllers.proposals.ProposalRestController.submitProposal(idProposal:Long)
+POST    /proposal/submit/:idProposal               controllers.proposals.ProposalRestController.submitProposal(idProposal:Long)
 GET     /proposal                       controllers.proposals.ProposalRestController.get()
 POST	/proposal                       controllers.proposals.ProposalRestController.save()
 DELETE	/proposal/:idProposal               controllers.proposals.ProposalRestController.delete(idProposal:Long)
-GET	/proposal/:idProposal/tags/:tags    controllers.proposals.ProposalRestController.addTag(idProposal:Long,tags:String)
 POST	/proposal/:idProposal/tags/:tags    controllers.proposals.ProposalRestController.addTag(idProposal:Long,tags:String)
 GET     /proposalStat                   controllers.proposals.ProposalRestController.proposalStat()
 
-GET	/creneau/:idCreneau         controllers.CreneauRestController.get(idCreneau:Long)
-GET	/creneau                    controllers.CreneauRestController.all()
-POST	/creneau                    controllers.CreneauRestController.save()
-DELETE	/creneau/:idCreneau         controllers.CreneauRestController.delete(idCreneau:Long)
+GET	    /format/:id         controllers.FormatRestController.get(id:Long)
+GET	    /format             controllers.FormatRestController.all()
+POST	/format             controllers.FormatRestController.save()
+DELETE	/format/:id         controllers.FormatRestController.delete(id:Long)
 
-GET	/event/:idEvent         controllers.EventRestController.get(idEvent:Long)
-GET	/event                  controllers.EventRestController.all()
+GET	    /event/:id          controllers.EventRestController.get(id:Long)
+GET	    /event              controllers.EventRestController.all()
+GET	    /user/event         controllers.EventRestController.getCurrentEvent()
 POST	/event              controllers.EventRestController.save()
-POST	/event/close/:idEvent     controllers.EventRestController.close(idEvent:Long)
-DELETE	/event/:idEvent     controllers.EventRestController.delete(idEvent:Long)
+DELETE	/event/:id          controllers.EventRestController.delete(id:Long)
+GET	    /event/:id/organizers     controllers.EventRestController.organizers(id:Long)
 
-GET	/dynamicfield/:idDynamicField   controllers.DynamicFieldRestController.get(idDynamicField:Long)
-GET	/dynamicfield			controllers.DynamicFieldRestController.all()
-POST	/dynamicfield			controllers.DynamicFieldRestController.save()
-DELETE	/dynamicfield/:idDynamicField   controllers.DynamicFieldRestController.delete(idDynamicField:Long)
+GET	    /track/:id            controllers.TrackRestController.get(id:Long)
+GET	    /track/proposals/:id  controllers.TrackRestController.getProposals(id:Long)
+GET	    /track                controllers.TrackRestController.all()
+POST	/track                controllers.TrackRestController.save()
+DELETE	/track/:id            controllers.TrackRestController.delete(id:Long)
+
+GET	    /dynamicfield/:id   controllers.DynamicFieldRestController.get(id:Long)
+GET	    /dynamicfield	    controllers.DynamicFieldRestController.all()
+POST	/dynamicfield	    controllers.DynamicFieldRestController.save()
+DELETE	/dynamicfield/:id   controllers.DynamicFieldRestController.delete(id:Long)
 
 GET	/user/:userId/proposals		controllers.proposals.ProposalRestController.getProposals(userId:Long)
 GET	/user/:userId/drafts		controllers.proposals.ProposalRestController.getProposalsDraft(userId:Long)
@@ -81,7 +89,7 @@ GET	/user/:userId/proposals/:status	controllers.proposals.ProposalRestController
 
 GET     /user/cospeakers            controllers.UserRestController.getCoSpeakers()
 GET     /user/:id                   controllers.UserRestController.getUser(id:Long)
-GET	/userLogged                 controllers.UserRestController.getUserLogged()
+GET	    /userLogged                 controllers.UserRestController.getUserLogged()
 
 GET     /admin/users/get            controllers.UserRestController.get()
 

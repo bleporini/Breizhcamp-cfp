@@ -61,10 +61,10 @@ public class AcceptedController extends Controller {
 
     private static ObjectNode proposalToJson(Proposal proposal) {
         ObjectNode proposalJson = Json.newObject();
-        proposalJson.put("id", proposal.id);
-        proposalJson.put("title", proposal.title);
-        proposalJson.put("description", proposal.description);
-        proposalJson.put("indicationsOrganisateurs", proposal.indicationsOrganisateurs);
+        proposalJson.put("id", proposal.getId());
+        proposalJson.put("title", proposal.getTitle());
+        proposalJson.put("description", proposal.getDescription());
+        proposalJson.put("indicationsOrganisateurs", proposal.getIndicationsOrganisateurs());
         ArrayNode tags = new ArrayNode(JsonNodeFactory.instance);
         for (Tag tag : proposal.getTags()) {
             tags.add(tag.nom);
@@ -72,8 +72,8 @@ public class AcceptedController extends Controller {
         proposalJson.put("tags", tags);
 
         ArrayNode speakers = new ArrayNode(JsonNodeFactory.instance);
-        if (proposal.speaker != null) {
-            speakers.add(getSpeakerInJson(proposal.speaker));
+        if (proposal.getSpeaker() != null) {
+            speakers.add(getSpeakerInJson(proposal.getSpeaker()));
         }
         for (User otherSpeaker : proposal.getCoSpeakers()) {
             speakers.add(getSpeakerInJson(otherSpeaker));
@@ -114,16 +114,16 @@ public class AcceptedController extends Controller {
 
     public static Result adressMacOfAcceptedSpeakers() {
 
-        List<Proposal> proposalsAccepted = Proposal.findByStatusForMinimalData(StatusProposal.ACCEPTE);
+        List<Proposal> proposalsAccepted = Proposal.findByStatusForMinimalData(Proposal.Status.ACCEPTED);
 
         Map<User, List<Proposal>> speakers = new HashMap<User, List<Proposal>>();
 
         for (Proposal proposal : proposalsAccepted) {
-            if (proposal.speaker != null) {
-                if (!speakers.containsKey(proposal.speaker)) {
-                    speakers.put(proposal.speaker, new ArrayList<Proposal>());
+            if (proposal.getSpeaker() != null) {
+                if (!speakers.containsKey(proposal.getSpeaker())) {
+                    speakers.put(proposal.getSpeaker(), new ArrayList<Proposal>());
                 }
-                speakers.get(proposal.speaker).add(proposal);
+                speakers.get(proposal.getSpeaker()).add(proposal);
             }
             for (User speaker : proposal.getCoSpeakers()) {
                 if (!speakers.containsKey(speaker)) {
@@ -144,11 +144,11 @@ public class AcceptedController extends Controller {
         List<AdressMacForSpeakers> macAddressOfSpeakers = new ArrayList<AdressMacForSpeakers>();
 
         for (User speaker : speakersSorted) {
-            macAddressOfSpeakers.add(new AdressMacForSpeakers(speaker.fullname, speaker.adresseMac, speaker.email, Joiner.on('\n').join(
+            macAddressOfSpeakers.add(new AdressMacForSpeakers(speaker.getFullname(), speaker.adresseMac, speaker.email, Joiner.on('\n').join(
                     Iterables.transform(speakers.get(speaker), new Function<Proposal, String>() {
                         @Override
                         public String apply(Proposal proposal) {
-                            return proposal.title;
+                            return proposal.getTitle();
                         }
                     }))));
         }
@@ -177,16 +177,16 @@ public class AcceptedController extends Controller {
     }
 
     private static ArrayNode getAcceptedProposalsToJson() {
-        List<Proposal> proposalsAccepted = Proposal.findByStatusForMinimalData(StatusProposal.ACCEPTE);
+        List<Proposal> proposalsAccepted = Proposal.findByStatusForMinimalData(Proposal.Status.ACCEPTED);
 
         Map<User, List<Proposal>> speakers = new HashMap<User, List<Proposal>>();
 
         for (Proposal proposal : proposalsAccepted) {
-            if (proposal.speaker != null) {
-                if (!speakers.containsKey(proposal.speaker)) {
-                    speakers.put(proposal.speaker, new ArrayList<Proposal>());
+            if (proposal.getSpeaker() != null) {
+                if (!speakers.containsKey(proposal.getSpeaker())) {
+                    speakers.put(proposal.getSpeaker(), new ArrayList<Proposal>());
                 }
-                speakers.get(proposal.speaker).add(proposal);
+                speakers.get(proposal.getSpeaker()).add(proposal);
             }
             for (User speaker : proposal.getCoSpeakers()) {
                 if (!speakers.containsKey(speaker)) {
@@ -209,8 +209,8 @@ public class AcceptedController extends Controller {
         // speaker.fullname
         // speaker.avatar
         // speaker.description
-        // speaker.liens.url
-        // speaker.liens.label
+        // speaker.links.url
+        // speaker.links.label
         // speaker.proposals.id
         // speaker.proposals.title
         // speaker.proposals.description
@@ -222,13 +222,13 @@ public class AcceptedController extends Controller {
             ArrayNode proposalsJson = new ArrayNode(JsonNodeFactory.instance);
             for (Proposal proposal : speakers.get(speaker)) {
                 ObjectNode proposalJson = Json.newObject();
-                proposalJson.put("id", proposal.id);
-                proposalJson.put("title", proposal.title);
-                proposalJson.put("description", proposal.description);
-                proposalJson.put("indicationsOrganisateurs", proposal.indicationsOrganisateurs);
+                proposalJson.put("id", proposal.getId());
+                proposalJson.put("title", proposal.getTitle());
+                proposalJson.put("description", proposal.getDescription());
+                proposalJson.put("indicationsOrganisateurs", proposal.getIndicationsOrganisateurs());
                 ArrayNode otherSpeakers = new ArrayNode(JsonNodeFactory.instance);
-                if (proposal.speaker != null && !speaker.equals(proposal.speaker)) {
-                    otherSpeakers.add(getSpeakerInJson(proposal.speaker));
+                if (proposal.getSpeaker() != null && !speaker.equals(proposal.getSpeaker())) {
+                    otherSpeakers.add(getSpeakerInJson(proposal.getSpeaker()));
                 }
                 for (User otherSpeaker : proposal.getCoSpeakers()) {
                     if (!otherSpeaker.equals(speaker)) {
@@ -253,21 +253,21 @@ public class AcceptedController extends Controller {
         // proposal.speaker.fullname
         // proposal.speaker.avatar
         // proposal.speaker.description
-        // proposal.speaker.liens.url
-        // proposal.speaker.liens.label
+        // proposal.speaker.links.url
+        // proposal.speaker.links.label
         // proposal.coSpeakers
 
-        List<Proposal> proposalsAccepted = Proposal.findByStatusForMinimalData(StatusProposal.ACCEPTE);
+        List<Proposal> proposalsAccepted = Proposal.findByStatusForMinimalData(Proposal.Status.ACCEPTED);
         ArrayNode result = new ArrayNode(JsonNodeFactory.instance);
         for (Proposal proposal : proposalsAccepted) {
             ObjectNode proposalJson = Json.newObject();
-            proposalJson.put("id", proposal.id);
-            proposalJson.put("title", proposal.title);
-            proposalJson.put("description", proposal.description);
-            proposalJson.put("indicationsOrganisateurs", proposal.indicationsOrganisateurs);
+            proposalJson.put("id", proposal.getId());
+            proposalJson.put("title", proposal.getTitle());
+            proposalJson.put("description", proposal.getDescription());
+            proposalJson.put("indicationsOrganisateurs", proposal.getIndicationsOrganisateurs());
 
-            if (proposal.speaker != null) {
-                proposalJson.put("speaker", getSpeakerInJson(proposal.speaker));
+            if (proposal.getSpeaker() != null) {
+                proposalJson.put("speaker", getSpeakerInJson(proposal.getSpeaker()));
             }
             ArrayNode coSpeakers = new ArrayNode(JsonNodeFactory.instance);
             for (User speaker : proposal.getCoSpeakers()) {
@@ -282,18 +282,18 @@ public class AcceptedController extends Controller {
     private static ObjectNode getSpeakerInJson(User speaker) {
         ObjectNode speakerJson = Json.newObject();
         speakerJson.put("id", speaker.id);
-        speakerJson.put("fullname", speaker.fullname);
+        speakerJson.put("fullname", speaker.getFullname());
         speakerJson.put("avatar", speaker.getAvatar());
         speakerJson.put("description", speaker.description);
 
         ArrayNode liens = new ArrayNode(JsonNodeFactory.instance);
-        for (Lien lien : speaker.getLiens()) {
+        for (Link link : speaker.getLinks()) {
             ObjectNode lienJson = Json.newObject();
-            lienJson.put("url", lien.url);
-            lienJson.put("label", lien.label);
+            lienJson.put("url", link.url);
+            lienJson.put("label", link.label);
             liens.add(lienJson);
         }
-        speakerJson.put("liens", liens);
+        speakerJson.put("links", liens);
         return speakerJson;
     }
 }

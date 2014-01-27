@@ -9,10 +9,7 @@ import play.i18n.Messages;
 import play.mvc.Result;
 import securesocial.core.java.SecureSocial;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static play.data.Form.form;
 import static play.libs.Json.toJson;
@@ -28,6 +25,18 @@ public class EventRestController extends BaseController {
         return ok(toJson(event));
     }
 
+    public static Result organizers(Long idEvent) {
+        Event event = Event.find.byId(idEvent);
+        if (event == null) {
+            return noContent();
+        }
+        return ok(toJson(event.getOrganizers()));
+    }
+
+    public static Result getCurrentEvent() {
+        return ok(toJson(getEvent()));
+    }
+
     public static Result close(Long idEvent) {
 
         // Vérification du rôle d'admin
@@ -38,7 +47,9 @@ public class EventRestController extends BaseController {
 
         Event event = Event.find.byId(idEvent);
         if (event != null) {
-            event.setClos(!event.isClos());
+
+            //TODO gestion de l'agenda
+
             event.update();
             return ok(toJson(event));
         }
@@ -71,15 +82,16 @@ public class EventRestController extends BaseController {
             if (Event.findByName(formEvent.getName()) != null) {
                 return badRequest(toJson(TransformValidationErrors.transform(Messages.get("error.event.already.exist"))));
             }
-
-            Event eventAvtif = Event.findActif(true);
-            if (eventAvtif != null) {
-                formEvent.setClos(true);
-            } else {
-                formEvent.setClos(false);
-            }
-
             formEvent.save();
+            List<User> organizersInDb = new ArrayList<User>();
+            for (User organizer : formEvent.getOrganizers()) {
+                organizersInDb.add(User.findById(organizer.id));
+            }
+            formEvent.getOrganizers().clear();
+            formEvent.getOrganizers().addAll(organizersInDb);
+            formEvent.saveManyToManyAssociations("organizers");
+            formEvent.update();
+
         } else {
             // Mise à jour d'un événement
             Event dbEvent = Event.find.byId(formEvent.getId());
@@ -88,18 +100,40 @@ public class EventRestController extends BaseController {
                 return badRequest(toJson(TransformValidationErrors.transform(Messages.get("error.event.already.exist"))));
             }
 
-            Event eventAvtif = Event.findActif(true);
-            if (!formEvent.isClos() && eventAvtif != null && eventAvtif.getId() != dbEvent.getId()) {
-                return badRequest(toJson(TransformValidationErrors.transform(Messages.get("error.event.already.actif"))));
-            }
-
-            dbEvent.setClos(formEvent.isClos());
+            dbEvent.setUrl(formEvent.getUrl());
+            dbEvent.setShortName(formEvent.getShortName());
+            dbEvent.setCgu(formEvent.getCgu());
             dbEvent.setDescription(formEvent.getDescription());
             dbEvent.update();
+
+            updateOrganizers(formEvent, dbEvent);
         }
 
         // HTTP 204 en cas de succès (NO CONTENT)
         return noContent();
+    }
+
+    private static void updateOrganizers(Event formEvent, Event dbEvent) {
+        Set<Long> organizersInForm = new HashSet<Long>();
+        for (User organizer : formEvent.getOrganizers()) {
+            organizersInForm.add(organizer.id);
+        }
+        List<User> organizersTmp = new ArrayList<User>(dbEvent.getOrganizers());
+        Set<Long> organizersInDb = new HashSet<Long>();
+        for (User organizer : organizersTmp) {
+            if (!organizersInForm.contains(organizer.id)) {
+                dbEvent.getOrganizers().remove(organizer);
+            } else {
+                organizersInDb.add(organizer.id);
+            }
+        }
+
+        for (Long organizer : organizersInForm) {
+            if (!organizersInDb.contains(organizer)) {
+                dbEvent.getOrganizers().add(User.findById(organizer));
+            }
+        }
+        dbEvent.saveManyToManyAssociations("organizers");
     }
 
     public static Result delete(Long idEvent) {
@@ -113,7 +147,7 @@ public class EventRestController extends BaseController {
         Event event = Event.find.byId(idEvent);
         if (event != null) {
             List<Proposal> proposals = Proposal.findByEvent(event);
-            if (proposals.isEmpty() && event.isClos()) {
+            if (proposals.isEmpty()) {
                 event.delete();
             } else {
                 Map<String, List<String>> errors = new HashMap<String, List<String>>();

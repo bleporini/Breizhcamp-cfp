@@ -1,15 +1,21 @@
 package models;
 
-import org.apache.commons.codec.digest.DigestUtils;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import models.utils.BooleanUtils;
+import org.apache.commons.codec.digest.DigestUtils;
 import play.data.format.Formats;
 import play.data.validation.Constraints;
 import play.db.ebean.Model;
+import play.libs.Json;
 
 import javax.persistence.*;
 import java.util.*;
-import models.utils.BooleanUtils;
+
+import static org.apache.commons.lang3.StringUtils.isEmpty;
 
 /**
  *
@@ -20,37 +26,30 @@ public class User extends Model {
 
     @Id
     public Long id;
-    
+
     @Constraints.Required
     @Formats.NonEmpty
     @Column(unique = true)
     public String email;
-    
+
     @Constraints.Required
     @Formats.NonEmpty
-    public String fullname;
+    public String fullName;
 
-    /**
-     * Valeur de l'objet secureSocial
-     * oauth1 / oauth2 / userPassword / openId
-     */
+    @OneToMany(cascade = CascadeType.ALL)
     @JsonIgnore
-    public String authenticationMethod;
+    public List<Credentials> credentials;
 
-    @OneToOne(cascade = CascadeType.ALL)
-    @JsonIgnore
-    public Credentials credentials;
-    
     @Formats.DateTime(pattern = "yyyy-MM-dd HH:mm:ss")
     public Date dateCreation;
 
     @Formats.NonEmpty
     public Boolean admin = false;
-    
+
     private Boolean notifOnMyProposal;
     private Boolean notifAdminOnAllProposal;
     private Boolean notifAdminOnProposalWithComment;
- 
+
     @Constraints.Pattern("^([0-9a-fA-F][0-9a-fA-F]:){5}([0-9a-fA-F][0-9a-fA-F])$")
     public String adresseMac;
 
@@ -58,7 +57,7 @@ public class User extends Model {
     public String description;
 
     @OneToMany(cascade = CascadeType.ALL)
-    public List<Lien> liens;
+    public List<Link> links;
 
     @OneToMany(mappedBy = "user")
     @JsonIgnore
@@ -68,10 +67,53 @@ public class User extends Model {
     @JsonIgnore
     private List<Proposal> coSpeakedProposals;
 
+    @ManyToMany
+    @JsonIgnore
+    private List<Track> tracksReview;
+
+    @ManyToMany
+    @JsonIgnore
+    private List<Track> tracksAdvice;
+
+    @ManyToMany
+    @JsonIgnore
+    private List<Event> events;
+
+
     @JsonIgnore
     public String avatar;
     private final static String GRAVATAR_URL = "http://www.gravatar.com/avatar/";
-    
+
+
+    public List<Event> getEvents() {
+        if (events == null) {
+            events = new ArrayList<Event>();
+        }
+        return events;
+    }
+
+    public boolean hasEvent(Event event) {
+        for(Event eventL : events){
+         if(eventL.getId() == event.getId()){
+             return true;
+         }
+        }
+        return false;
+    }
+
+    @JsonProperty("events")
+    public ArrayNode getEventsName() {
+        ArrayNode result = new ArrayNode(JsonNodeFactory.instance);
+
+        for (Event event : events) {
+            ObjectNode eventJson = Json.newObject();
+            eventJson.put("id", event.getId());
+            eventJson.put("shortName", event.getShortName());
+            result.add(eventJson);
+        }
+
+        return result;
+    }
 
     public List<DynamicFieldValue> getDynamicFieldValues() {
         if (dynamicFieldValues == null) {
@@ -92,29 +134,14 @@ public class User extends Model {
         }
         return jsonFields;
     }
-    
-    
-    @JsonProperty("provider")
-    public String getProvider(){
-        String provider = null;
-        if (credentials!=null) {
-            provider = this.credentials.providerId;
-        }
-        return provider;
-    }
 
     @JsonProperty("isInfoValid")
     public boolean isInfoValid() {
-        if (email == null || email.isEmpty()) {
+        if (isEmpty(email) || isEmpty(fullName)) {
             return false;
         }
-        if (fullname == null || fullname.isEmpty()) {
+        if (!admin && isEmpty(description)) {
             return false;
-        }
-        if (!admin) {
-            if (description == null || description.isEmpty()) {
-                return false;
-            }
         }
 
         return true;
@@ -144,11 +171,11 @@ public class User extends Model {
         this.notifAdminOnProposalWithComment = notifAdminOnProposalWithComment;
     }
 
-    public List<Lien> getLiens() {
-        if (liens == null) {
-            liens = new ArrayList<Lien>();
+    public List<Link> getLinks() {
+        if (links == null) {
+            links = new ArrayList<Link>();
         }
-        return liens;
+        return links;
     }
 
     @JsonProperty("avatar")
@@ -159,6 +186,7 @@ public class User extends Model {
         }
         return avatar;
     }
+
     // -- Queries (long id, user.class)
     public static Model.Finder<Long, User> find = new Model.Finder<Long, User>(Long.class, User.class);
 
@@ -185,42 +213,23 @@ public class User extends Model {
     /**
      * Retrieve a user from an external Id (SocialUser id/providerId).
      *
-     * @param uuid uuid to search
      * @return a user
      */
     public static User findByExternalId(String userId, String providerId) {
 
         // Bug de SecureSocial ? socialUser.id().providerId() renvoie parfois userPassword au lieu de userpass
         if (providerId.equals("userPassword")) providerId = "userpass";
-        
-        return find.fetch("credentials").where()
-                    .eq("credentials.extUserId", userId)
-                    .eq("credentials.providerId", providerId)
-                    .findUnique();
-    }
 
-    
-    public static User findByEmailAndProvider(String email, String provider) {
-        
         return find.fetch("credentials").where()
-                    .eq("credentials.providerId", provider)
-                    .eq("email", email)
-                    .findUnique();
-    }
-    
-    /**
-     * Retrieve a user from a fullname.
-     *
-     * @param fullname Full name
-     * @return a user
-     */
-    public static User findByFullname(String fullname) {
-        return find.where().eq("fullname", fullname).findUnique();
+                .eq("credentials.extUserId", userId)
+                .eq("credentials.providerId", providerId)
+                .findUnique();
     }
 
     public static List<User> findAll() {
         return find.all();
     }
+
 
     public static List<User> findAllAdmin() {
         return find.where().eq("admin", Boolean.TRUE).findList();
@@ -228,7 +237,6 @@ public class User extends Model {
 
     public void filterInfos() {
         adresseMac = null;
-        authenticationMethod = null;
         admin = null;
         dateCreation = null;
         email = null;
@@ -238,6 +246,7 @@ public class User extends Model {
         setNotifOnMyProposal(null);
     }
 
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -246,28 +255,7 @@ public class User extends Model {
 
         User user = (User) o;
 
-        if (admin != null ? !admin.equals(user.admin) : user.admin != null) return false;
-        if (adresseMac != null ? !adresseMac.equals(user.adresseMac) : user.adresseMac != null) return false;
-        if (authenticationMethod != null ? !authenticationMethod.equals(user.authenticationMethod) : user.authenticationMethod != null)
-            return false;
-        if (avatar != null ? !avatar.equals(user.avatar) : user.avatar != null) return false;
-        if (coSpeakedProposals != null ? !coSpeakedProposals.equals(user.coSpeakedProposals) : user.coSpeakedProposals != null)
-            return false;
-        if (credentials != null ? !credentials.equals(user.credentials) : user.credentials != null) return false;
-        if (dateCreation != null ? !dateCreation.equals(user.dateCreation) : user.dateCreation != null) return false;
-        if (description != null ? !description.equals(user.description) : user.description != null) return false;
-        if (dynamicFieldValues != null ? !dynamicFieldValues.equals(user.dynamicFieldValues) : user.dynamicFieldValues != null)
-            return false;
-        if (email != null ? !email.equals(user.email) : user.email != null) return false;
-        if (fullname != null ? !fullname.equals(user.fullname) : user.fullname != null) return false;
-        if (id != null ? !id.equals(user.id) : user.id != null) return false;
-        if (liens != null ? !liens.equals(user.liens) : user.liens != null) return false;
-        if (notifAdminOnAllProposal != null ? !notifAdminOnAllProposal.equals(user.notifAdminOnAllProposal) : user.notifAdminOnAllProposal != null)
-            return false;
-        if (notifAdminOnProposalWithComment != null ? !notifAdminOnProposalWithComment.equals(user.notifAdminOnProposalWithComment) : user.notifAdminOnProposalWithComment != null)
-            return false;
-        if (notifOnMyProposal != null ? !notifOnMyProposal.equals(user.notifOnMyProposal) : user.notifOnMyProposal != null)
-            return false;
+        if (!email.equals(user.email)) return false;
 
         return true;
     }
@@ -275,8 +263,14 @@ public class User extends Model {
     @Override
     public int hashCode() {
         int result = super.hashCode();
-        result = 31 * result + (id != null ? id.hashCode() : 0);
-        result = 31 * result + (email != null ? email.hashCode() : 0);
+        result = 31 * result + email.hashCode();
         return result;
     }
+
+    public String getFullname() {
+        return fullName;
+    }
+
+
+
 }

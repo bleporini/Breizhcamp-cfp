@@ -1,5 +1,6 @@
 package controllers;
 
+import models.Event;
 import models.User;
 import play.mvc.Controller;
 import securesocial.core.Identity;
@@ -12,15 +13,17 @@ public class BaseController extends Controller {
 
     protected static User getLoggedUser() {
         Identity socialUser = (Identity) ctx().args.get(SecureSocial.USER_KEY);
-        checkProfileCompletion(socialUser);
         User user = User.findByEmail(socialUser.email().get());
         return user;
     }
 
-    private static void checkProfileCompletion(Identity socialUser) {
-        if (!socialUser.email().isDefined()) {
-            forbidden();
+
+    protected static Event getEvent() {
+        Event event = Event.findByUrl(request().host());
+        if (event == null) {
+            event = Event.getDefaut(request().host());
         }
-        // TODO
+        return event;
     }
 }
+

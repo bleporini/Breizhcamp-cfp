@@ -23,6 +23,7 @@ import java.io.StringWriter;
 import java.net.MalformedURLException;
 import java.util.*;
 
+import static models.Proposal.Status.*;
 import static play.data.Form.form;
 import static play.libs.Json.toJson;
 
@@ -35,7 +36,11 @@ public class ProposalRestController extends BaseController {
 
         User user = getLoggedUser();
 
-        if (!user.admin && !user.id.equals(proposal.speaker.id)) {
+        if (proposal == null || !proposal.getEvent().equals(getEvent())) {
+            return noContent();
+        }
+
+        if ((!user.admin && !user.hasEvent(getEvent())) && !user.id.equals(proposal.getSpeaker().id)) {
             // On vérifie que le user est admin où le propriétaire du proposal
             return forbidden(toJson(TransformValidationErrors.transform("Action non autorisée")));
         }
@@ -48,17 +53,23 @@ public class ProposalRestController extends BaseController {
         return ok(toJson(proposal));
     }
 
+
+
     public static Result submitProposal(Long idProposal) {
         Proposal proposal = Proposal.find.byId(idProposal);
 
         User user = getLoggedUser();
 
-        if (!user.id.equals(proposal.speaker.id) && !proposal.getCoSpeakers().contains(user)) {
+        if (proposal == null || !proposal.getEvent().equals(getEvent())) {
+            return noContent();
+        }
+
+        if (!user.id.equals(proposal.getSpeaker().id) && !proposal.getCoSpeakers().contains(user)) {
             // On vérifie que le user est admin où le propriétaire du proposal
             return forbidden(toJson(TransformValidationErrors.transform("Action non autorisée")));
         }
 
-        proposal.draft = false;
+        proposal.status = SUBMITTED;
         proposal.update();
 
         return ok(toJson(proposal));
@@ -67,7 +78,7 @@ public class ProposalRestController extends BaseController {
     public static Result get() {
         User user = getLoggedUser();
 
-        List<Proposal> proposals = Proposal.findBySpeaker(user);
+        List<Proposal> proposals = Proposal.findBySpeakerAndEvent(user,getEvent());
 
         for (Proposal proposal : proposals) {
             if (user.admin) {
@@ -86,17 +97,14 @@ public class ProposalRestController extends BaseController {
     public static Result getProposals(Long userId) {
         User user = User.find.byId(userId);
 
-
-        List<Proposal> allProposals = Proposal.findBySpeaker(user);
+        List<Proposal> allProposals = Proposal.findBySpeakerAndEvent(user,getEvent());
         List<Proposal> proposals = new ArrayList<Proposal>();
         for (Proposal proposal : allProposals) {
-            if (!proposal.draft) {
-                proposal.fiteredComments(user);
-                proposal.fiteredCoSpeakers();
-                proposal.filtereSpeaker();
+            proposal.fiteredComments(user);
+            proposal.fiteredCoSpeakers();
+            proposal.filtereSpeaker();
 
-                proposals.add(proposal);
-            }
+            proposals.add(proposal);
         }
         return ok(toJson(proposals));
     }
@@ -106,10 +114,10 @@ public class ProposalRestController extends BaseController {
         User user = User.find.byId(userId);
 
 
-        List<Proposal> allProposals = Proposal.findBySpeaker(user);
+        List<Proposal> allProposals = Proposal.findBySpeakerAndEvent(user,getEvent());
         List<Proposal> proposals = new ArrayList<Proposal>();
         for (Proposal proposal : allProposals) {
-            if (proposal.draft) {
+            if (proposal.isDraft()) {
                 proposal.fiteredComments(user);
                 proposal.fiteredCoSpeakers();
                 proposal.filtereSpeaker();
@@ -121,9 +129,12 @@ public class ProposalRestController extends BaseController {
     }
 
     public static Result getProposalsByStatus(Long userId, String status) {
-        StatusProposal statusProposal = StatusProposal.fromCode(status);
+        return getProposalsByStatus(userId, Proposal.Status.fromCode(status));
+    }
+
+    public static Result getProposalsByStatus(Long userId, Proposal.Status status) {
         User user = User.find.byId(userId);
-        List<Proposal> proposals = Proposal.findBySpeakerAndStatus(user, statusProposal);
+        List<Proposal> proposals = Proposal.findBySpeakerAndStatus(user, status);
         for (Proposal proposal : proposals) {
             proposal.fiteredComments(user);
             proposal.fiteredCoSpeakers();
@@ -138,10 +149,10 @@ public class ProposalRestController extends BaseController {
 
     public static Result all(boolean draft) {
         User user = getLoggedUser();
-        if (!user.admin) {
+        if ((!user.admin && !user.hasEvent(getEvent()))) {
             return forbidden();
         }
-        List<Proposal> proposals = Proposal.findAllForDisplay();
+        List<Proposal> proposals = Proposal.findAllForDisplay(getEvent());
 
         Map<Long, Vote> votes = Vote.findVotesUserByProposalId(user);
 
@@ -150,50 +161,52 @@ public class ProposalRestController extends BaseController {
         ArrayNode result = new ArrayNode(JsonNodeFactory.instance);
 
         for (Proposal proposal : proposals) {
-            if (proposal.draft == draft) {
+            if (proposal.isDraft() == draft) {
 
                 ObjectNode proposalJson = Json.newObject();
 
-                proposalJson.put("id", proposal.id);
-                proposalJson.put("title", proposal.title);
+                proposalJson.put("id", proposal.getId());
+                proposalJson.put("title", proposal.getTitle());
 
 
-                if (proposal.dureePreferee != null) {
-                    ObjectNode dureePrefereeJson = Json.newObject();
-                    dureePrefereeJson.put("id", proposal.dureePreferee.getId());
-                    dureePrefereeJson.put("dureeMinutes", proposal.dureePreferee.getDureeMinutes());
-                    dureePrefereeJson.put("libelle", proposal.dureePreferee.getLibelle());
-                    proposalJson.put("dureePreferee", dureePrefereeJson);
+                if (proposal.format != null) {
+                    ObjectNode formatJson = Json.newObject();
+                    formatJson.put("id", proposal.format.getId());
+                    formatJson.put("dureeMinutes", proposal.format.getDureeMinutes());
+                    formatJson.put("libelle", proposal.format.getLibelle());
+                    proposalJson.put("format", formatJson);
                 } else {
-                    proposalJson.putNull("dureePreferee");
-                }
-                if (proposal.dureeApprouve != null) {
-                    proposalJson.put("dureeApprouve", proposal.dureeApprouve.getId());
-                } else {
-                    proposalJson.putNull("dureeApprouve");
-                }
-                if (proposal.statusProposal != null) {
-                    proposalJson.put("statusProposal", proposal.statusProposal.name());
-                } else {
-                    proposalJson.putNull("statusProposal");
+                    proposalJson.putNull("format");
                 }
 
-                if (proposal.speaker != null) {
+                if (proposal.status != null) {
+                    proposalJson.put("status", proposal.status.name());
+                } else {
+                    proposalJson.putNull("status");
+                }
+
+                if (proposal.audience != null) {
+                    proposalJson.put("audience", proposal.audience.name());
+                } else {
+                    proposalJson.putNull("audience");
+                }
+
+                if (proposal.getSpeaker() != null) {
                     ObjectNode speakerJson = Json.newObject();
-                    speakerJson.put("id", proposal.speaker.id);
-                    speakerJson.put("fullname", proposal.speaker.fullname);
-                    speakerJson.put("avatar", proposal.speaker.getAvatar());
+                    speakerJson.put("id", proposal.getSpeaker().id);
+                    speakerJson.put("fullname", proposal.getSpeaker().getFullname());
+                    speakerJson.put("avatar", proposal.getSpeaker().getAvatar());
                     proposalJson.put("speaker", speakerJson);
                 }
 
-                Vote voteUser = votes.get(proposal.id);
+                Vote voteUser = votes.get(proposal.getId());
                 if (voteUser != null) {
                     proposalJson.put("vote", voteUser.getNote());
                 } else {
                     proposalJson.putNull("vote");
                 }
 
-                Pair<Double, Integer> moyenne = moyennes.get(proposal.id);
+                Pair<Double, Integer> moyenne = moyennes.get(proposal.getId());
                 if (moyenne != null) {
                     proposalJson.put("moyenne", moyenne.getLeft());
                     proposalJson.put("nbvote", moyenne.getRight());
@@ -219,24 +232,25 @@ public class ProposalRestController extends BaseController {
 
         Proposal formProposal = proposalForm.get();
 
-        if (formProposal.id == null) {
+        if (formProposal.getId() == null) {
 
             if (VoteStatus.getVoteStatus() != VoteStatusEnum.NOT_BEGIN) {
                 return badRequest(toJson(TransformValidationErrors.transform(Messages.get("error.vote.begin"))));
             }
             // Nouveau proposal
-            formProposal.speaker = user;
-            if (Proposal.findByTitle(formProposal.title) != null) {
+            formProposal.setSpeaker(user);
+            if (Proposal.findByTitle(formProposal.getTitle()) != null) {
                 return badRequest(toJson(TransformValidationErrors.transform(Messages.get("error.proposal.already.exist"))));
             }
 
-            formProposal.draft = true;
+            formProposal.status = DRAFT;
+            formProposal.event = getEvent();
             formProposal.save();
             List<User> coSpeakersInDb = new ArrayList<User>();
             for (User coSpeaker : formProposal.getCoSpeakers()) {
                 coSpeakersInDb.add(User.findById(coSpeaker.id));
             }
-            formProposal.event = Event.findActif();
+
             formProposal.getCoSpeakers().clear();
             formProposal.getCoSpeakers().addAll(coSpeakersInDb);
             formProposal.saveManyToManyAssociations("coSpeakers");
@@ -244,26 +258,35 @@ public class ProposalRestController extends BaseController {
             updateTags(proposalForm.data().get("tagsname"), formProposal);
         } else {
             // Mise à jour d'un proposal
-            Proposal dbProposal = Proposal.find.byId(formProposal.id);
+            Proposal dbProposal = Proposal.find.byId(formProposal.getId());
 
-            if (!(user.id.equals(dbProposal.speaker.id) || user.admin)) {
+            if (!(user.id.equals(dbProposal.getSpeaker().id) || user.admin)) {
                 // On vérifie que le user est admin où le propriétaire du proposal
-                Logger.info("Tentative de suppression de proposal sans les droits requis : " + dbProposal.id);
+                Logger.info("Tentative de suppression de proposal sans les droits requis : " + dbProposal.getId());
                 return unauthorized();
             }
 
 
-            if (!formProposal.title.equals(dbProposal.title)
-                    && Proposal.findByTitle(formProposal.title) != null) {
-                Logger.error("error.proposal.already.exist :" + formProposal.title);
+            if (!formProposal.getTitle().equals(dbProposal.getTitle())
+                    && Proposal.findByTitle(formProposal.getTitle()) != null) {
+                Logger.error("error.proposal.already.exist :" + formProposal.getTitle());
                 return badRequest(toJson(TransformValidationErrors.transform(Messages.get("error.proposal.already.exist"))));
             }
-            dbProposal.title = formProposal.title;
-            dbProposal.description = formProposal.description;
-            dbProposal.dureePreferee = formProposal.dureePreferee;
-            dbProposal.indicationsOrganisateurs = formProposal.indicationsOrganisateurs;
-            dbProposal.draft = true;
-            dbProposal.save();
+            dbProposal.setTitle(  formProposal.getTitle()) ;
+            dbProposal.setDescription( formProposal.getDescription());
+            dbProposal.format = formProposal.format;
+            dbProposal.audience = formProposal.audience;
+            dbProposal.track = formProposal.track;
+
+            dbProposal.setIndicationsOrganisateurs( formProposal.getIndicationsOrganisateurs());
+            dbProposal.status = DRAFT;
+            dbProposal.update();
+
+            dbProposal.track.getProposals().clear();
+            dbProposal.track.getProposals().add(dbProposal);
+            dbProposal.track.saveManyToManyAssociations("proposals");
+            dbProposal.track.update();
+
             updateCoSpeakers(formProposal, dbProposal);
             updateTags(proposalForm.data().get("tagsname"), dbProposal);
         }
@@ -332,7 +355,7 @@ public class ProposalRestController extends BaseController {
         User user = getLoggedUser();
         Proposal dbProposal = Proposal.find.byId(idProposal);
 
-        if (!user.admin && !user.id.equals(dbProposal.speaker.id)) {
+        if ((!user.admin && !user.hasEvent(getEvent())) && !user.id.equals(dbProposal.getSpeaker().id)) {
             // On vérifie que le user est admin où le propriétaire du proposal
             return forbidden(toJson(TransformValidationErrors.transform("Action non autorisée")));
         }
@@ -355,9 +378,9 @@ public class ProposalRestController extends BaseController {
         Proposal proposal = Proposal.find.byId(idProposal);
 
         User user = getLoggedUser();
-        if (!user.admin && !(user.id.equals(proposal.speaker.id))) {
+        if ((!user.admin && !user.hasEvent(getEvent())) && !(user.id.equals(proposal.getSpeaker().id))) {
             // On vérifie que le user est admin où le propriétaire du proposal
-            Logger.info("Tentative de suppression de proposal sans les droits requis : " + proposal.id);
+            Logger.info("Tentative de suppression de proposal sans les droits requis : " + proposal.getId());
             return unauthorized();
         }
 
@@ -369,10 +392,11 @@ public class ProposalRestController extends BaseController {
                 reponse.question = null;
                 reponse.delete();
             }
-            comment.update();
+            //comment.update();
             comment.reponses = new ArrayList<Comment>();
             comment.delete();
         }
+
 
         List<Tag> tagtmp = new ArrayList<Tag>(proposal.getTags());
         for (Tag tag : tagtmp) {
@@ -408,7 +432,7 @@ public class ProposalRestController extends BaseController {
             return badRequest(toJson(errors));
         }
 
-        if (!user.admin && !user.id.equals(proposal.speaker.id)) {
+        if (!user.admin && !user.id.equals(proposal.getSpeaker().id)) {
             return forbidden(toJson(TransformValidationErrors.transform("Action non autorisée")));
         }
 
@@ -416,6 +440,7 @@ public class ProposalRestController extends BaseController {
             Comment comment = new Comment();
             comment.author = user;
             comment.comment = commentForm;
+            comment.dateCreation = new Date();
             comment.privateComment = privateComment;
             comment.proposal = proposal;
             comment.save();
@@ -485,7 +510,7 @@ public class ProposalRestController extends BaseController {
             return badRequest(toJson(errors));
         }
 
-        if (!user.admin && !user.id.equals(proposal.speaker.id)) {
+        if (!user.admin && !user.id.equals(proposal.getSpeaker().id)) {
             return forbidden(toJson(TransformValidationErrors.transform("Action non autorisée")));
         }
 
@@ -493,6 +518,7 @@ public class ProposalRestController extends BaseController {
             Comment comment = new Comment();
             comment.author = user;
             comment.comment = commentForm;
+            comment.dateCreation = new Date();
             comment.privateComment = privateComment;
             comment.proposal = proposal;
 
@@ -528,7 +554,7 @@ public class ProposalRestController extends BaseController {
             return badRequest(toJson(errors));
         }
 
-        if (!user.admin && !user.id.equals(proposal.speaker.id)) {
+        if (!user.admin && !user.id.equals(proposal.getSpeaker().id)) {
             return forbidden(toJson(TransformValidationErrors.transform("Action non autorisée")));
         }
 
@@ -543,7 +569,7 @@ public class ProposalRestController extends BaseController {
 
     public static Result saveStatus(Long idProposal) throws MalformedURLException {
         User user = getLoggedUser();
-        if (!user.admin) {
+        if ((!user.admin && !user.hasEvent(getEvent()))) {
             return forbidden();
         }
 
@@ -551,39 +577,31 @@ public class ProposalRestController extends BaseController {
 
         JsonNode node = request().body().asJson();
 
-        StatusProposal newStatus = StatusProposal.fromValue(node.get("status").asText());
+        Proposal.Status newStatus = Proposal.Status.fromValue(node.get("status").asText());
 
-        if (proposal.statusProposal != newStatus) {
-            proposal.statusProposal = newStatus;
-
-            if (proposal.statusProposal.equals(StatusProposal.ACCEPTE)) {
-                Creneau dureeApprouve = Creneau.find.byId(Long.valueOf(node.get("dureeApprouve").asText()));
-
-                proposal.dureeApprouve = dureeApprouve;
-            } else {
-                proposal.dureeApprouve = null;
-            }
+        if (proposal.status != newStatus) {
+            proposal.status = newStatus;
 
             proposal.save();
-            if (proposal.statusProposal != null) {
-                proposal.statusProposal.sendMail(proposal, proposal.speaker.email);
+            if (proposal.status != null) {
+                proposal.status.sendMail(proposal, proposal.getSpeaker().email);
             }
         }
 
         return ok();
     }
 
-    public static Result rejectAllProposalWithoutStatus() throws MalformedURLException {
+    public static Result rejectAllRemainingProposals() throws MalformedURLException {
         User user = getLoggedUser();
-        if (!user.admin) {
+        if ((!user.admin && !user.hasEvent(getEvent()))) {
             return forbidden();
         }
 
-        for (Proposal proposal : Proposal.findByNoStatus()) {
-            proposal.statusProposal = StatusProposal.REJETE;
+        for (Proposal proposal : Proposal.findByStatus(SUBMITTED,getEvent())) {
+            proposal.status = REJECTED;
             proposal.save();
-            if (proposal.speaker != null) {
-                proposal.statusProposal.sendMail(proposal, proposal.speaker.email);
+            if (proposal.getSpeaker() != null) {
+                proposal.status.sendMail(proposal, proposal.getSpeaker().email);
             }
         }
         return ok();
@@ -591,7 +609,7 @@ public class ProposalRestController extends BaseController {
 
     public static Result saveVote(Long idProposal, Integer note) {
         User user = getLoggedUser();
-        if (!user.admin) {
+        if ((!user.admin && !user.hasEvent(getEvent()))) {
             return forbidden();
         }
 
@@ -619,14 +637,14 @@ public class ProposalRestController extends BaseController {
     public static Result proposalStat() {
 
         User user = getLoggedUser();
-        if (!user.admin) {
+        if ((!user.admin && !user.hasEvent(getEvent()))) {
             return forbidden();
         }
         ObjectNode result = Json.newObject();
-        result.put("nbProposals", Proposal.findNbProposals(false));
-        result.put("nbProposalDraft", Proposal.findNbProposals(true));
-        result.put("nbAcceptes", Proposal.findNbProposalsAcceptes());
-        result.put("nbRejetes", Proposal.findNbProposalsRejetes());
+        result.put("nbProposals", Proposal.countProposals(false));
+        result.put("nbProposalDraft", Proposal.countProposals(true));
+        result.put("nbAcceptes", Proposal.countProposalsAcceptes());
+        result.put("nbRejetes", Proposal.countProposalsRejetes());
         result.put("nbVotesUser", Vote.findNbVotesUser(user));
         return ok(result);
     }
@@ -659,33 +677,40 @@ public class ProposalRestController extends BaseController {
         @CsvColumn(value = "indicationsOrganisateurs", order = 8)
         public String indicationsOrganisateurs;
 
+        @CsvColumn(value = "audience", order = 8)
+        public String audience;
+
 
         public static ProposalCsv fromProposal(Proposal proposal) {
             ProposalCsv proposalCsv = new ProposalCsv();
-            if (proposal.speaker != null) {
-                proposalCsv.speakerFullName = proposal.speaker.fullname;
+            if (proposal.getSpeaker() != null) {
+                proposalCsv.speakerFullName = proposal.getSpeaker().getFullname();
                 for (User coSpeaker : proposal.getCoSpeakers()) {
-                    proposalCsv.speakerFullName += "\n" + coSpeaker.fullname;
+                    proposalCsv.speakerFullName += "\n" + coSpeaker.getFullname();
                 }
             }
 
 
-            proposalCsv.title = proposal.title;
-            if (proposal.statusProposal != null) {
-                proposalCsv.status = proposal.statusProposal.name();
+            proposalCsv.title = proposal.getTitle();
+            if (proposal.status != null) {
+                proposalCsv.status = proposal.status.name();
+            }
+
+            if (proposal.audience != null) {
+                proposalCsv.audience = proposal.audience.name();
             }
 
             if (VoteStatus.getVoteStatus() == VoteStatusEnum.CLOSED) {
                 proposalCsv.moyenne = Vote.calculMoyenne(proposal);
             }
 
-            if (proposal.dureePreferee != null) {
-                proposalCsv.formatPrefere = proposal.dureePreferee.getLibelle();
+            if (proposal.format != null) {
+                proposalCsv.formatPrefere = proposal.format.getLibelle();
             }
 
 
-            proposalCsv.description = proposal.description;
-            proposalCsv.indicationsOrganisateurs = proposal.indicationsOrganisateurs;
+            proposalCsv.description = proposal.getDescription();
+            proposalCsv.indicationsOrganisateurs = proposal.getIndicationsOrganisateurs();
             return proposalCsv;
         }
     }

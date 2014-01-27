@@ -1,0 +1,35 @@
+<div class="row">
+    <div class="col-md-2"></div>
+    <div class="col-md-6">
+
+        <p>
+            <a href="#/admin/format/new">
+                <button class="btn btn-primary">Nouveau format</button>
+            </a>
+        </p>
+        <p>
+            <span class="badge badge-important" ng-repeat="error in errors['']">{{error}}</span>
+        </p>
+
+        <table class="table table-bordered table-striped">
+            <tbody>
+            <tr>
+                <th class="col-md-3">Libelle</th>
+                <th class="col-md-4">Durée en minutes</th>
+                <th class="col-md-4">Nombre de slots</th>
+                <th class="col-md-3">Actions</th>
+            </tr>
+            <tr ng-repeat="format in formats">
+                <td>{{format.libelle}}</td>
+                <td>{{format.dureeMinutes}}</td>
+                <td>{{format.nbInstance}}</td>
+                <td style="text-align: center">
+                    <a href="#/admin/format/edit/{{format.id}}" title="Editer"><i class="fa fa-pencil"></i></a>
+                    &nbsp;
+                    <a ng-click="deleteCreneau(format)" title="Supprimer"><i class="fa fa-trash-o"></i></a>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>

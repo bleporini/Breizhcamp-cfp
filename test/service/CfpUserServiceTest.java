@@ -1,20 +1,14 @@
 package service;
 
-import com.typesafe.config.Config;
-import com.typesafe.config.ConfigFactory;
 import org.junit.Test;
-import play.Configuration;
-import play.GlobalSettings;
 import play.test.FakeApplication;
 import play.test.Helpers;
 import securesocial.core.Identity;
 import securesocial.core.IdentityId;
 import securesocial.core.java.BaseUserService;
 
-import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Properties;
 
 import static org.fest.assertions.Assertions.assertThat;
 import static play.test.Helpers.fakeApplication;
@@ -42,7 +36,7 @@ public class CfpUserServiceTest {
     }
 
     private final FakeApplication fakeApplication = fakeApplication(conf);
-    private final CfpUserService userService = fakeApplication.getWrappedApplication().plugin(CfpUserService.class).get();
+    private final CfpUserServiceDelegate userService = fakeApplication.getWrappedApplication().plugin(CfpUserServiceDelegate.class).get();
 
     @Test
     public void should_return_default_user() throws Exception {
@@ -81,7 +75,7 @@ public class CfpUserServiceTest {
             @Override
             public void run() {
                 final BaseUserService userService1 = app.getWrappedApplication()
-                        .plugin(CfpUserService.class).get().unWrap();
+                        .plugin(CfpUserServiceDelegate.class).get().unWrap();
                 assertThat(userService1.getClass()).isEqualTo(CfpUserServiceDelegate.class);
                 assertThat(userService1.getClass()).isNotEqualTo(MockCfpUserServiceDelegate.class);
             }

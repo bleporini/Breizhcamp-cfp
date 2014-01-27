@@ -1,22 +1,16 @@
 package controllers;
 
-import static play.libs.Json.toJson;
+import com.fasterxml.jackson.databind.JsonNode;
+import models.*;
+import models.utils.Mail;
+import org.pegdown.PegDownProcessor;
+import play.i18n.Messages;
+import play.mvc.Result;
+import securesocial.core.java.SecureSocial;
 
-import java.net.URL;
 import java.util.*;
 
-import models.*;
-
-import models.utils.Mail;
-import com.fasterxml.jackson.databind.JsonNode;
-
-import org.pegdown.PegDownProcessor;
-import play.Configuration;
-import play.i18n.Messages;
-import play.mvc.Controller;
-import play.mvc.Result;
-import securesocial.core.Identity;
-import securesocial.core.java.SecureSocial;
+import static play.libs.Json.toJson;
 
 @SecureSocial.SecuredAction(ajaxCall = true)
 public class Admin extends BaseController {
@@ -58,8 +52,8 @@ public class Admin extends BaseController {
         // has proposals ?
         List<Proposal> proposals = Proposal.findBySpeaker(userToDelete);
         for (Proposal proposal : proposals) {
-            proposal.statusProposal = StatusProposal.REJETE;
-            proposal.speaker = null;
+            proposal.status = Proposal.Status.REJECTED;
+            proposal.setSpeaker(null);
             proposal.save();
         }
 
@@ -131,8 +125,10 @@ public class Admin extends BaseController {
     }
 
     public static Result mailing(String status) {
-        StatusProposal statusProposal = StatusProposal.fromValue(status);
+        return mailing(Proposal.Status.fromValue(status));
+    }
 
+    public static Result mailing(Proposal.Status status) {
         JsonNode body = request().body().asJson();
         String subjet = body.get("subject").asText();
         String mailMarkdown = body.get("mail").asText();
@@ -142,9 +138,9 @@ public class Admin extends BaseController {
 
         Set<String> mailsOfSpeakers = new HashSet<String>();
 
-        for (Proposal proposal : Proposal.findByStatus(statusProposal)) {
-            if (proposal.speaker != null && proposal.speaker.email != null) {
-                mailsOfSpeakers.add(proposal.speaker.email);
+        for (Proposal proposal : Proposal.findByStatus(status,getEvent())) {
+            if (proposal.getSpeaker() != null && proposal.getSpeaker().email != null) {
+                mailsOfSpeakers.add(proposal.getSpeaker().email);
             }
             for (User coSpeakers : proposal.getCoSpeakers()) {
                 if (coSpeakers.email != null) {

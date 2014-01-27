@@ -1,31 +1,22 @@
 package controllers.account.settings;
 
-import static play.libs.Json.toJson;
-import static play.data.Form.form;
-
-import java.util.*;
-
-import controllers.BaseController;
-import models.DynamicField;
-import models.DynamicFieldJson;
-import models.DynamicFieldValue;
-import models.Lien;
-import models.User;
-import models.utils.TransformValidationErrors;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
-
+import controllers.BaseController;
+import models.*;
+import models.utils.TransformValidationErrors;
 import play.Logger;
 import play.data.Form;
 import play.i18n.Messages;
-import play.mvc.Controller;
-import static play.mvc.Controller.request;
 import play.mvc.Result;
-import securesocial.core.Identity;
 import securesocial.core.java.SecureSocial;
 
-@SecureSocial.SecuredAction(ajaxCall=true)
+import java.util.*;
+
+import static play.data.Form.form;
+import static play.libs.Json.toJson;
+
+@SecureSocial.SecuredAction(ajaxCall = true)
 public class Account extends BaseController {
 
     // Utilisé par le json.
@@ -36,30 +27,23 @@ public class Account extends BaseController {
         }
         return ok(toJson(user));
     }
-    
-    public static Result deleteLink(Long idLink) {
-    	
-    	Lien lien = Lien.find.byId(idLink);
-    	lien.delete();
-    	
-    	return ok();
-    }
-    
+
+
     public static Result save() {
         User user = getLoggedUser();
         Form<AccountForm> accountForm;
-        List<Form<Lien>> liensForms = new ArrayList<Form<Lien>>();
-        Form<Lien> newLink = null;
+        List<Form<Link>> liensForms = new ArrayList<Form<Link>>();
+        Form<Link> newLink = null;
         String newLabel = null;
         String newUrl = null;
         JsonNode userJson = request().body().asJson();
         accountForm = form(AccountForm.class).bind(userJson);
 
-        // Parcour des liens du user;
-        ArrayNode liens = (ArrayNode) userJson.get("liens");
-        for (JsonNode lien : liens ) {
+        // Parcour des links du user;
+        ArrayNode liens = (ArrayNode) userJson.get("links");
+        for (JsonNode lien : liens) {
             if (lien.get("id") != null) {
-                Form<Lien> oneLienForm = form(Lien.class).bind(lien);
+                Form<Link> oneLienForm = form(Link.class).bind(lien);
                 if (oneLienForm.hasErrors()) {
                     Map<String, Map<String, List<String>>> errors = new HashMap<String, Map<String, List<String>>>();
                     errors.put(lien.get("id").asText(), TransformValidationErrors.transform(oneLienForm.errors()));
@@ -67,7 +51,7 @@ public class Account extends BaseController {
                 }
                 liensForms.add(oneLienForm);
             } else {
-                newLink = form(Lien.class).bind(lien);
+                newLink = form(Link.class).bind(lien);
                 if (lien.get("label") != null) {
                     newLabel = lien.get("label").asText();
                 }
@@ -82,25 +66,25 @@ public class Account extends BaseController {
             return badRequest(toJson(TransformValidationErrors.transform(newLink.errors())));
         }
         if (newLink != null && newLink.hasErrors()) {
-        	newLink.errors().clear();
+            newLink.errors().clear();
         }
-        
+
         if (accountForm.hasErrors()) {
             return badRequest(toJson(TransformValidationErrors.transform(accountForm.errors())));
         }
-        
-        for (Lien oneLien : user.getLiens()) {
-        	Form<Lien> lienForm = liensForms.remove(0);
-        	oneLien.label = lienForm.get().label;
-        	oneLien.url = lienForm.get().url;
+
+        for (Link oneLink : user.getLinks()) {
+            Form<Link> lienForm = liensForms.remove(0);
+            oneLink.label = lienForm.get().label;
+            oneLink.url = lienForm.get().url;
         }
-        
+
         user.description = accountForm.get().description;
         user.avatar = accountForm.get().avatar;
-        
+
         if (newLinkExists(newLink, newLabel, newUrl)) {
-        	Lien lien = newLink.get();
-        	user.getLiens().add(lien);
+            Link link = newLink.get();
+            user.getLinks().add(link);
         }
 
         user.save();
@@ -148,17 +132,17 @@ public class Account extends BaseController {
         return ok();
     }
 
-    public static boolean newLinkExists(Form<Lien> newLink, String newLabel, String newUrl) {
+    public static boolean newLinkExists(Form<Link> newLink, String newLabel, String newUrl) {
         return newLink != null
                 && ((newLabel != null && newLabel.length() > 0)
                 || (newUrl != null && newUrl.length() > 0));
     }
-    
+
     public static Result saveEmail() {
         JsonNode node = request().body().asJson();
         String email = node.get("email").asText();
 
-        if(email == null || email.equals("") ){
+        if (email == null || email.equals("")) {
             Logger.debug("error.email.required");
             Map<String, List<String>> errors = new HashMap<String, List<String>>();
             errors.put("email", Collections.singletonList(Messages.get("error.email.already.exist")));
@@ -167,7 +151,7 @@ public class Account extends BaseController {
 
         User user = getLoggedUser();
         User existUser = User.findByEmail(email);
-        if(existUser != null && !existUser.equals(user)){
+        if (existUser != null && !existUser.equals(user)) {
             Logger.debug("error.email.already.exist");
             Map<String, List<String>> errors = new HashMap<String, List<String>>();
             errors.put("email", Collections.singletonList(Messages.get("error.email.already.exist")));
@@ -175,10 +159,9 @@ public class Account extends BaseController {
         }
 
 
-
         user.email = email;
         user.save();
         return noContent();
     }
-    
+
 }

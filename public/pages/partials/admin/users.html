@@ -37,14 +37,14 @@
             </tr>
 
             <tr ng-repeat="user in users  | orderBy:predicate:reverse">
-                <td><a ng-href="/#/profil/{{user.id}}">{{user.fullname}}</a></td>
+                <td><a ng-href="/#/profil/{{user.id}}"><span class="fa fa-user"></span> {{user.fullname}}</a></td>
                 <td>{{user.email}}<input type="hidden" name="email" ng-model="user.email" value="{{user.email}}"></td>
                 <td>{{user.provider}}</td>
                 <td><input type="checkbox" name="{{user.email}}" ng-model="user.admin"
                            checked="{{{true:'checked', false:''}[user.admin]}}"></td>
                 <td>
                     <a ng-show="!user.admin" class="btn" href="#deleteCompte{{user.id}}"
-                       data-toggle="modal"><i class="icon-remove"></i></a></td>
+                       data-toggle="modal"><i class="fa fa-times-circle-o"></i></a></td>
             </tr>
 
             </tbody>

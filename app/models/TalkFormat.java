@@ -12,7 +12,7 @@ import java.util.List;
 
 @SuppressWarnings("serial")
 @Entity
-public class Creneau extends Model {
+public class TalkFormat extends Model {
 
     @Id
     private Long id;
@@ -20,7 +20,7 @@ public class Creneau extends Model {
     @Constraints.Required
     @Constraints.MaxLength(50)
     @Formats.NonEmpty
-    @Column(unique = true, length = 50)
+    @Column(length = 50)
     private String libelle;
 
     @Constraints.Required
@@ -33,7 +33,7 @@ public class Creneau extends Model {
     @ManyToOne
     public Event event;
 
-    @ManyToMany
+    @OneToMany
     @JsonIgnore
     private List<Proposal> proposals;
 
@@ -84,10 +84,14 @@ public class Creneau extends Model {
     }
     
     
-    public static Finder<Long, Creneau> find = new Finder<Long, Creneau>(Long.class, Creneau.class);
+    public static Finder<Long, TalkFormat> find = new Finder<Long, TalkFormat>(Long.class, TalkFormat.class);
 
-    public static Creneau findByLibelle(String libelle) {
-        return find.query().where().eq("libelle", libelle).findUnique();
+    public static TalkFormat findByLibelle(String libelle, Event event) {
+        return find.query().where().eq("libelle", libelle).eq("event", event).findUnique();
+    }
+
+    public static List<TalkFormat> findByEvent(Event event) {
+        return find.query().where().eq("event", event).findList();
     }
 
     public Integer getNbInstance() {
@@ -96,5 +100,13 @@ public class Creneau extends Model {
 
     public void setNbInstance(Integer nbInstance) {
         this.nbInstance = nbInstance;
+    }
+
+    public Event getEvent() {
+        return event;
+    }
+
+    public void setEvent(Event event) {
+        this.event = event;
     }
 }
