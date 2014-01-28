@@ -83,10 +83,12 @@ function DashboardController($rootScope, $scope, $http, ProfilService, AccountSe
 }
 
 // Pour que l'injection de dépendances fonctionne en cas de 'minifying'
-NewProposalController.$inject = ['$scope', '$log', '$location', 'ProposalService', 'CreneauxService', 'TrackService', '$http'];
-function NewProposalController($scope, $log, $location, ProposalService, CreneauxService, TrackService, $http) {
+NewProposalController.$inject = ['$rootScope','$scope', '$log', '$location', 'ProposalService', 'CreneauxService', 'TrackService','UserService', '$http'];
+function NewProposalController($rootScope,$scope, $log, $location, ProposalService, CreneauxService, TrackService, UserService, $http) {
 
     $scope.checkloc(false);
+
+    $rootScope.user = UserService.getUserData();
 
     $scope.$location = $location;
 
