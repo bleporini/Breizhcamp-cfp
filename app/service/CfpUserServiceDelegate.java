@@ -38,34 +38,37 @@ public class CfpUserServiceDelegate extends BaseUserService {
 
     @Override
     public Identity doFind(IdentityId identityId) {
-        Logger.info("doFind SecureSocial Find User by Id : " + identityId.userId() + " / " + identityId.providerId());
+        Logger.info("doFind SecureSocial Find User by Id : {} / {}" , identityId.userId(), identityId.providerId());
         // Recherche d'un user existant et création ou mise à jour des données en SGBD
         User userCfp = User.findByExternalId(identityId.userId(), identityId.providerId());
         Identity identity = null;
         if (userCfp!=null) {
             identity = userToIdentity(userCfp, identityId);
         }
-        Logger.info("doFind result : " + identityId.userId() + " / " + identityId.providerId() + " :: " + identity);
+        Logger.info("doFind result : {} / {} :: {}" , identityId.userId(), identityId.providerId(), identity);
         return identity;
     }
 
     @Override
     public Identity doSave(Identity socialUser) {
-
-        Logger.info("doSave " + socialUser.fullName() + " / socialIdentityId : " + socialUser.identityId().userId() + " - " + socialUser.identityId().providerId() + "=" + socialUser.email());
+        Logger.info("doSave {} / socialIdentityId : {} - {} = {}",
+                socialUser.fullName(),
+                socialUser.identityId().userId(),
+                socialUser.identityId().providerId(),
+                socialUser.email());
         // Recherche d'un user existant et création ou mise à jour des données en SGBD
         if (socialUser.email().isEmpty()) {
             throw new IllegalArgumentException("OAuth authentication need to be configured with user's email scope");
         }
         User userCfp = User.findByEmail(socialUser.email().get());
         if (userCfp == null) {
-            Logger.info("Création du user : " + socialUser.fullName());
+            Logger.info("Création du user : {}",socialUser.fullName());
             userCfp = new User();
 
             userCfp.admin = false;
             userCfp.dateCreation = new Date();
         } else {
-            Logger.info("Mise à jour du user : " + socialUser.fullName());
+            Logger.info("Mise à jour du user : {}", socialUser.fullName());
         }
         populateUser(userCfp, socialUser);
 
@@ -94,7 +97,7 @@ public class CfpUserServiceDelegate extends BaseUserService {
      */
     @Override
     public void doDeleteToken(String uuid) {
-        Logger.info("doDeleteToken SecureSocial : " + uuid);
+        Logger.info("doDeleteToken SecureSocial : {}", uuid);
     }
 
     /**
@@ -109,7 +112,7 @@ public class CfpUserServiceDelegate extends BaseUserService {
      */
     @Override
     public Identity doFindByEmailAndProvider(String email, String providerId) {
-        Logger.info("doFindByEmailAndProvider SecureSocial : " + email + " / " + providerId);
+        Logger.info("doFindByEmailAndProvider SecureSocial : {} / {}", email, providerId);
         Identity result = null;
         User user = User.findByEmail(email);
         if (user != null) {
@@ -129,7 +132,7 @@ public class CfpUserServiceDelegate extends BaseUserService {
      */
     @Override
     public Token doFindToken(String tokenId) {
-        Logger.info("doFindToken SecureSocial : " + tokenId);
+        Logger.info("doFindToken SecureSocial : {}", tokenId);
         return tokens.get(tokenId);
     }
 
@@ -144,7 +147,7 @@ public class CfpUserServiceDelegate extends BaseUserService {
     @Override
     public void doSave(Token token) {
         tokens.put(token.uuid, token);
-        Logger.info("doSave SecureSocial Token : " + token.getEmail() + " / " + token.getUuid());
+        Logger.info("doSave SecureSocial Token : {} / {}", token.getEmail(), token.getUuid());
     }
 
     /**
