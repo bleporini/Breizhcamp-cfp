@@ -84,12 +84,13 @@ public class Mail {
 						toEmail);
 			}
 
-			Logger.debug("Mail sent - SMTP:" + root.getString("smtp.host")
-                    + ":" + root.getString("smtp.port")
-                    + " SSL:" + root.getString("smtp.ssl")
-                    + " user:" + root.getString("smtp.user")
-                    + " password:" + root.getString("smtp.password")
-                    + " message:" + messageText);
+            Logger.debug("Mail sent - SMTP: {} : {} SSL: {} user: {} password: {} message: {}",
+                    root.getString("smtp.host"),
+                    root.getString("smtp.port"),
+                    root.getString("smtp.ssl"),
+                    root.getString("smtp.user"),
+                    root.getString("smtp.password"),
+                    messageText);
         }
 
 		private void sendEmail(final String mailFrom, String messageText,
@@ -98,7 +99,7 @@ public class Mail {
 			email.setFrom(mailFrom);
 			email.setSubject(subject);
 			email.setRecipient(toEmail);
-			Logger.debug("Mail.sendMail: Mail will be sent to " + toEmail);
+			Logger.debug("Mail.sendMail: Mail will be sent to {}", toEmail);
 			email.send(messageText, messageHtml);
 		}
     }

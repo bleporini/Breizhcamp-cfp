@@ -262,7 +262,7 @@ public class ProposalRestController extends BaseController {
 
             if (!(user.id.equals(dbProposal.getSpeaker().id) || user.admin)) {
                 // On vérifie que le user est admin où le propriétaire du proposal
-                Logger.info("Tentative de suppression de proposal sans les droits requis : " + dbProposal.getId());
+                Logger.info("Tentative de suppression de proposal sans les droits requis : {}", dbProposal.getId());
                 return unauthorized();
             }
 
@@ -343,7 +343,7 @@ public class ProposalRestController extends BaseController {
                     dbTag.nom = tag.toUpperCase();
                     dbTag.save();
                 }
-                Logger.debug("tags: = " + dbTag.id);
+                Logger.debug("tags: = {}", dbTag.id);
                 dbProposal.getTags().add(dbTag);
             }
         }
@@ -361,9 +361,9 @@ public class ProposalRestController extends BaseController {
         }
 
         if (dbProposal != null) {
-            Logger.debug("addTags: = " + tags + " init tags " + dbProposal.getTagsName());
+            Logger.debug("addTags: = {} init tags {}",tags, dbProposal.getTagsName());
             updateTags(tags, dbProposal);
-            Logger.debug("fin addTags: = " + dbProposal.getTagsName() + " size : " + dbProposal.getTags().size());
+            Logger.debug("fin addTags: = {} size : {}" ,dbProposal.getTagsName(), dbProposal.getTags().size());
             return ok();
         } else {
             return notFound();
@@ -380,7 +380,7 @@ public class ProposalRestController extends BaseController {
         User user = getLoggedUser();
         if ((!user.admin && !user.hasEvent(getEvent())) && !(user.id.equals(proposal.getSpeaker().id))) {
             // On vérifie que le user est admin où le propriétaire du proposal
-            Logger.info("Tentative de suppression de proposal sans les droits requis : " + proposal.getId());
+            Logger.info("Tentative de suppression de proposal sans les droits requis : {}", proposal.getId());
             return unauthorized();
         }
 
@@ -498,7 +498,7 @@ public class ProposalRestController extends BaseController {
         JsonNode node = request().body().asJson();
         String commentForm = null;
         boolean privateComment = false;
-        Logger.debug("nose : " + node.asText());
+        Logger.debug("nose : {}", node.asText());
         if (node != null && node.get("comment") != null && !node.get("comment").equals("null")) {
             commentForm = node.get("comment").asText();
             if (user.admin && node.get("private") != null) {
@@ -545,7 +545,7 @@ public class ProposalRestController extends BaseController {
 
         JsonNode node = request().body().asJson();
         String commentForm = null;
-        Logger.debug("nose : " + node.asText());
+        Logger.debug("nose : {}", node.asText());
         if (node != null && node.get("comment") != null && !node.get("comment").equals("null")) {
             commentForm = node.get("comment").asText();
         } else {

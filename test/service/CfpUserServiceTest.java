@@ -36,7 +36,7 @@ public class CfpUserServiceTest {
     }
 
     private final FakeApplication fakeApplication = fakeApplication(conf);
-    private final CfpUserServiceDelegate userService = fakeApplication.getWrappedApplication().plugin(CfpUserServiceDelegate.class).get();
+    private final CfpUserService userService = fakeApplication.getWrappedApplication().plugin(CfpUserService.class).get();
 
     @Test
     public void should_return_default_user() throws Exception {
@@ -75,7 +75,7 @@ public class CfpUserServiceTest {
             @Override
             public void run() {
                 final BaseUserService userService1 = app.getWrappedApplication()
-                        .plugin(CfpUserServiceDelegate.class).get().unWrap();
+                        .plugin(CfpUserService.class).get().unWrap();
                 assertThat(userService1.getClass()).isEqualTo(CfpUserServiceDelegate.class);
                 assertThat(userService1.getClass()).isNotEqualTo(MockCfpUserServiceDelegate.class);
             }
