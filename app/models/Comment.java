@@ -36,7 +36,7 @@ public class Comment extends Model {
     @Constraints.Required
     @Formats.NonEmpty
     @Constraints.MaxLength(140)
-    @Column(length = 140)
+    @Column(length = 140, nullable = false)
     public String comment;
 
     public boolean clos;

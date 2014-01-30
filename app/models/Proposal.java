@@ -33,13 +33,13 @@ public class Proposal extends Model {
     @Constraints.Required
     @Constraints.MaxLength(50)
     @Formats.NonEmpty
-    @Column(unique = true, length = 50)
+    @Column(unique = true, length = 50, nullable = false)
     private String title;
 
     @Constraints.Required
     @Constraints.MaxLength(2000)
     @Formats.NonEmpty
-    @Column(length = 2000)
+    @Column(length = 2000, nullable = false)
     private String description;
 
     @Constraints.MaxLength(1000)
@@ -120,11 +120,11 @@ public class Proposal extends Model {
         return commentsFiltered;
     }
 
-    @ManyToOne
+    @ManyToOne(optional = false)
     @Constraints.Required
     public TalkFormat format;
 
-    @ManyToOne
+    @ManyToOne(optional = false)
     @Constraints.Required
     public Track track;
 

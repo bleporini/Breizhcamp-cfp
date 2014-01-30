@@ -22,7 +22,7 @@ public class Tag extends Model {
 
     @Constraints.Required
     @Formats.NonEmpty
-    @Column(unique = true)
+    @Column(unique = true, nullable = false)
     public String nom;
 
     @ManyToMany

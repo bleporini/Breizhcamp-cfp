@@ -18,19 +18,19 @@ public class Track extends Model {
     @Constraints.Required
     @Constraints.MaxLength(50)
     @Formats.NonEmpty
-    @Column(length = 50)
+    @Column(length = 50, nullable = false)
     private String title;
 
     @Constraints.Required
     @Constraints.MaxLength(5)
     @Formats.NonEmpty
-    @Column( length = 5)
+    @Column( length = 5, nullable = false)
     private String shortTitle;
 
     @Constraints.Required
     @Constraints.MaxLength(1000)
     @Formats.NonEmpty
-    @Column(length = 1000)
+    @Column(length = 1000, nullable = false)
     private String description;
 
     @OneToMany(mappedBy = "track",cascade = CascadeType.ALL)

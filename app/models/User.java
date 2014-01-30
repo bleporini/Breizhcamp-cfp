@@ -29,11 +29,12 @@ public class User extends Model {
 
     @Constraints.Required
     @Formats.NonEmpty
-    @Column(unique = true)
+    @Column(unique = true, nullable = false)
     public String email;
 
     @Constraints.Required
     @Formats.NonEmpty
+    @Column(nullable = false)
     public String fullName;
 
     @OneToMany(cascade = CascadeType.ALL)

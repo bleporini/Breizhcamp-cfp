@@ -18,25 +18,25 @@ public class Event extends Model {
     @Constraints.Required
     @Constraints.MaxLength(50)
     @Formats.NonEmpty
-    @Column(unique = true, length = 50)
+    @Column(unique = true, length = 50, nullable = false)
     private String name;
 
     @Constraints.Required
     @Constraints.MaxLength(5)
     @Formats.NonEmpty
-    @Column(unique = true, length = 5)
+    @Column(unique = true, length = 5, nullable = false)
     private String shortName;
 
     @Constraints.Required
     @Formats.NonEmpty
     @Constraints.MaxLength(200)
-    @Column(length = 200)
+    @Column(length = 200, nullable = false)
     private String url;
 
     @Constraints.Required
     @Constraints.MaxLength(1000)
     @Formats.NonEmpty
-    @Column(length = 1000)
+    @Column(length = 1000, nullable = false)
     private String description;
 
     @Constraints.MaxLength(1000)
@@ -80,6 +80,7 @@ public class Event extends Model {
             event.setUrl(url);
             event.shortName = "DEF";
             event.setName("Evénement par défaut");
+            event.setDescription("Description par défaut");
             event.save();
         } else {
             event.update();

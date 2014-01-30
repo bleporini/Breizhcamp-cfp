@@ -20,10 +20,11 @@ public class TalkFormat extends Model {
     @Constraints.Required
     @Constraints.MaxLength(50)
     @Formats.NonEmpty
-    @Column(length = 50)
+    @Column(length = 50, nullable = false)
     private String libelle;
 
     @Constraints.Required
+    @Column(nullable = false)
     private Integer dureeMinutes;
 
     private String description;

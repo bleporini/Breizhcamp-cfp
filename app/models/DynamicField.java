@@ -17,7 +17,7 @@ public class DynamicField extends Model {
     @Id
     private Long id;
 
-    @Column(unique = true, length = 50)
+    @Column(unique = true, length = 50, nullable = false)
     @Constraints.Required
     @Constraints.MaxLength(50)
     @Formats.NonEmpty

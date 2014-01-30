@@ -16,7 +16,7 @@ create table comment (
   author_id                 bigint,
   date_creation             timestamp,
   proposal_id               bigint,
-  comment                   varchar(140),
+  comment                   varchar(140) not null,
   clos                      boolean,
   private_comment           boolean,
   question_id               bigint,
@@ -42,7 +42,7 @@ create table credentials (
 
 create table dynamic_field (
   id                        bigint not null,
-  name                      varchar(50),
+  name                      varchar(50) not null,
   constraint uq_dynamic_field_name unique (name),
   constraint pk_dynamic_field primary key (id))
 ;
@@ -57,10 +57,10 @@ create table dynamic_field_value (
 
 create table event (
   id                        bigint not null,
-  name                      varchar(50),
-  short_name                varchar(5),
-  url                       varchar(200),
-  description               varchar(1000),
+  name                      varchar(50) not null,
+  short_name                varchar(5) not null,
+  url                       varchar(200) not null,
+  description               varchar(1000) not null,
   cgu                       varchar(1000),
   agenda_id                 bigint,
   constraint uq_event_name unique (name),
@@ -71,24 +71,24 @@ create table event (
 create table link (
   id                        bigint not null,
   user_id                   bigint not null,
-  label                     varchar(50),
-  url                       varchar(200),
-  link_type                 integer,
+  label                     varchar(50) not null,
+  url                       varchar(200) not null,
+  link_type                 integer not null,
   constraint ck_link_link_type check (link_type in (0,1,2,3,4,5,6,7)),
   constraint pk_link primary key (id))
 ;
 
 create table proposal (
   id                        bigint not null,
-  title                     varchar(50),
-  description               varchar(2000),
+  title                     varchar(50) not null,
+  description               varchar(2000) not null,
   indications_organisateurs varchar(1000),
   speaker_id                bigint,
   event_id                  bigint,
   status                    varchar(1),
   audience                  integer,
-  format_id                 bigint,
-  track_id                  bigint,
+  format_id                 bigint not null,
+  track_id                  bigint not null,
   constraint ck_proposal_status check (status in ('R','W','D','A','S')),
   constraint ck_proposal_audience check (audience in (0,1,2)),
   constraint uq_proposal_title unique (title),
@@ -97,15 +97,15 @@ create table proposal (
 
 create table tag (
   id                        bigint not null,
-  nom                       varchar(255),
+  nom                       varchar(255) not null,
   constraint uq_tag_nom unique (nom),
   constraint pk_tag primary key (id))
 ;
 
 create table talk_format (
   id                        bigint not null,
-  libelle                   varchar(50),
-  duree_minutes             integer,
+  libelle                   varchar(50) not null,
+  duree_minutes             integer not null,
   description               varchar(255),
   nb_instance               integer,
   event_id                  bigint,
@@ -114,17 +114,17 @@ create table talk_format (
 
 create table track (
   id                        bigint not null,
-  title                     varchar(50),
-  short_title               varchar(5),
-  description               varchar(1000),
+  title                     varchar(50) not null,
+  short_title               varchar(5) not null,
+  description               varchar(1000) not null,
   event_id                  bigint,
   constraint pk_track primary key (id))
 ;
 
 create table user (
   id                        bigint not null,
-  email                     varchar(255),
-  full_name                 varchar(255),
+  email                     varchar(255) not null,
+  full_name                 varchar(255) not null,
   date_creation             timestamp,
   admin                     boolean,
   notif_on_my_proposal      boolean,

@@ -20,17 +20,18 @@ public class Link extends Model {
     @Constraints.Required
     @Formats.NonEmpty
     @Constraints.MaxLength(50)
-    @Column(length = 50)
+    @Column(length = 50, nullable = false)
     public String label;
 
     @Constraints.Required
     @Formats.NonEmpty
     @Constraints.MaxLength(200)
-    @Column(length = 200)
+    @Column(length = 200, nullable = false)
     public String url;
 
     @Constraints.Required
     @JsonIgnore
+    @Column(nullable = false)
     public LinkType linkType = LinkType.OTHER;
 
     @JsonProperty("type")
