@@ -22,7 +22,8 @@
 
                             <div class="controls">
                                 <input type="text" id="title" name="title" value="" placeholder="Titre"
-                                       class="input-xxlarge" ng-model="proposal.title" maxlength="50">
+                                       class="input-xxlarge" ng-model="proposal.title" maxlength="50"
+                                        required>
 
                                 <p class="help-inline">Longueur maximum: 50, Obligatoire</p>
 
@@ -85,7 +86,7 @@
                             <label class="control-label" for="format">Format</label>
 
                             <div class="controls">
-                                <select id="format" name="format"
+                                <select id="format" name="format" required
                                         ng-change="changeFormat(proposal.format.id, proposal, formats)"
                                         ng-model="proposal.format.id"
                                         ng-options="format.id as format.libelle + ' (' + format.dureeMinutes + 'min)' for format in formats"></select>
@@ -114,7 +115,7 @@
                             <label class="control-label" for="track">Track</label>
 
                             <div class="controls">
-                                <select id="track" name="track"
+                                <select id="track" name="track" required
                                         ng-model="proposal.track.id"
                                         ng-options="track.id as track.title for track in tracks"></select>
 
